@@ -33,6 +33,13 @@ class Settings(BaseSettings):
     login_ventana_min: int = 15
     login_bloqueo_min: int = 15
 
+    # OTP de la app del paciente (login por código, WhatsApp con fallback a email).
+    otp_max_intentos: int = 5
+    otp_ventana_min: int = 15
+    otp_expira_min: int = 10
+    # Token de la app nativa del paciente: vida larga (30 días), sin refresh en v1.
+    paciente_token_expire_minutes: int = 60 * 24 * 30
+
     @model_validator(mode="after")
     def _exigir_secreto_en_produccion(self):
         """Fuera de development, el JWT no puede firmarse con el secreto por defecto."""

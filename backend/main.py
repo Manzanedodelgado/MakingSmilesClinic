@@ -5,7 +5,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from api.auth_router import router as auth_router
+from api.paciente_auth_router import router as paciente_auth_router
 from api.config_router import router as config_router
+from api.configuracion_centro_router import router as configuracion_centro_router
+from api.configuracion_agenda_router import router as configuracion_agenda_router
+from api.configuracion_staff_router import router as configuracion_staff_router
+from api.configuracion_roles_router import router as configuracion_roles_router
+from api.uploads_router import router as uploads_router
 from api.health_router import router as health_router
 from domain.config.settings import settings
 
@@ -49,8 +55,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Orden de inclusión = precedencia del legado (main.py del sistema original).
 app.include_router(auth_router)
+app.include_router(paciente_auth_router)
 app.include_router(config_router)
+app.include_router(configuracion_centro_router)
+app.include_router(configuracion_agenda_router)
+app.include_router(configuracion_staff_router)
+app.include_router(configuracion_roles_router)
+app.include_router(uploads_router)
 app.include_router(health_router)
 
 
