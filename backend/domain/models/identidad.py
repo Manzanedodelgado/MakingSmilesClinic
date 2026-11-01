@@ -5,9 +5,11 @@ Un solo modelo de identidad, dos niveles:
   Nivel 1 — PLATAFORMA (dueño del SaaS):   platform_users · platform_roles
   Nivel 2 — CENTRO (personal clínico):     usuarios · roles · permisos
                                            user_center_roles  (LA tabla de accesos)
+                                           user_collaborator  (un user PUEDE ser colaborador)
 
-Regla: el ACCESO se resuelve por `user_center_roles` (user × centro × rol), NO por un
-campo `role` plano en el usuario. Superuser ≠ usuario de centro: tablas separadas.
+Regla: el ACCESO se resuelve por `user_center_roles`
+(user × centro × rol), NO por un campo `role` plano en el usuario.
+Superuser ≠ usuario de centro: tablas separadas, nunca se mezclan.
 """
 from datetime import date, datetime
 from typing import Optional
@@ -17,7 +19,7 @@ from sqlmodel import Field, Relationship, SQLModel
 from domain.models._base import TimestampMixin
 
 
-# ═══════════════════ NIVEL 1 — PLATAFORMA ═══════════════════
+# ═══════════════════ NIVEL 1 — PLATAFORMA (dueño del software) ═══════════════════
 class PlatformUser(TimestampMixin, table=True):
     """Operador del SaaS (superadmin). SEPARADO de los usuarios de centro."""
     __tablename__ = "platform_users"
@@ -29,17 +31,22 @@ class PlatformUser(TimestampMixin, table=True):
     activo: bool = Field(default=True, index=True)
 
 
-# ═══════════════════ NIVEL 2 — CENTRO ═══════════════════
+# ═══════════════════ NIVEL 2 — CENTRO (personal clínico) ═══════════════════
 class Usuario(TimestampMixin, table=True):
-    """La PERSONA (IdStaff). Identidad fija, única — nunca se duplica."""
+    """La PERSONA (IdStaff). Identidad fija, única — nunca se duplica.
+
+    El vínculo laboral (alta/baja, tipo, contrato) y el ser colaborador NO viven aquí:
+    son de cada `usuario_periodos` (una persona puede tener varias etapas). `activo` se
+    deriva de tener un periodo abierto; no es un campo.
+    """
     __tablename__ = "usuarios"
-    id: Optional[int] = Field(default=None, primary_key=True)
+    id: Optional[int] = Field(default=None, primary_key=True)   # IdStaff / IdUsu
     nombre: str = Field(max_length=120)
     apellidos: Optional[str] = Field(default=None, max_length=200)
-    nif: Optional[str] = Field(default=None, max_length=20)
+    nif: Optional[str] = Field(default=None, max_length=20)   # documento de la persona (identidad)
     email: Optional[str] = Field(default=None, index=True, max_length=255)
     username: Optional[str] = Field(default=None, index=True, max_length=120)
-    password_hash: Optional[str] = Field(default=None, max_length=255)
+    password_hash: Optional[str] = Field(default=None, max_length=255)   # no todo el staff tiene login
     telefono: Optional[str] = Field(default=None, max_length=50)
     color: Optional[str] = Field(default=None, max_length=9)
 
@@ -48,16 +55,22 @@ class Usuario(TimestampMixin, table=True):
 
 
 class UsuarioPeriodo(TimestampMixin, table=True):
-    """Una etapa laboral de la persona (alta→baja). `fecha_baja` vacía = abierto."""
+    """Una etapa laboral de la persona (alta→baja). Una persona puede tener varias.
+
+    Código visible = idUsuario[.orden]: el 1er periodo es "1", la 1ª reactivación "1.1"…
+    `fecha_baja` vacía = periodo abierto = persona activa en esta etapa.
+    `centro_id`: dónde trabajó esa etapa (la identidad en `usuarios` es global; el centro
+    es de la etapa, no de la persona — migración 020).
+    """
     __tablename__ = "usuario_periodos"
     id: Optional[int] = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuarios.id", nullable=False, index=True)
     centro_id: int = Field(foreign_key="centros.id", nullable=False, index=True)
-    orden: int = Field(default=0, index=True)
-    staff_tipo: Optional[str] = Field(default=None, max_length=40, index=True)
-    tipo_contrato: Optional[str] = Field(default=None, max_length=40)
+    orden: int = Field(default=0, index=True)   # 0 = etapa original; 1,2… = reactivaciones
+    staff_tipo: Optional[str] = Field(default=None, max_length=40, index=True)  # DOCTOR | HIGIENISTA…
+    tipo_contrato: Optional[str] = Field(default=None, max_length=40)    # Autónomo | Reg. General
     fecha_alta: Optional[date] = Field(default=None)
-    fecha_baja: Optional[date] = Field(default=None)
+    fecha_baja: Optional[date] = Field(default=None)   # vacía = abierto = activo
     usuario: Usuario = Relationship(back_populates="periodos")
 
 
@@ -74,7 +87,7 @@ class Permiso(TimestampMixin, table=True):
     """Catálogo de permisos finos."""
     __tablename__ = "permisos"
     id: Optional[int] = Field(default=None, primary_key=True)
-    codigo: str = Field(unique=True, index=True, max_length=100)
+    codigo: str = Field(unique=True, index=True, max_length=100)   # p.ej. citas.editar
     descripcion: Optional[str] = Field(default=None, max_length=300)
     roles: list["RolePermiso"] = Relationship(back_populates="permiso")
 
@@ -89,7 +102,8 @@ class RolePermiso(TimestampMixin, table=True):
 
 
 class UserCenterRole(TimestampMixin, table=True):
-    """La tabla de ACCESOS (membresía): usuario × centro."""
+    """La tabla de ACCESOS (MEMBRESÍA): usuario × centro. Da acceso al centro y construye
+    `accesos` en el login. El `rol_id` ya NO decide los permisos (eso es user_center_permisos)."""
     __tablename__ = "user_center_roles"
     id: Optional[int] = Field(default=None, primary_key=True)
     usuario_id: int = Field(foreign_key="usuarios.id", nullable=False, index=True)
@@ -99,7 +113,9 @@ class UserCenterRole(TimestampMixin, table=True):
 
 
 class UserCenterPermiso(TimestampMixin, table=True):
-    """Permisos efectivos por persona (concesión directa): usuario × centro × permiso."""
+    """PERMISOS efectivos por persona: usuario × centro × permiso (concesión directa).
+    Sustituye al rol como fuente de permisos. El "Permisos" de Config→Personal habilita
+    áreas marcando los permisos de cada área aquí."""
     __tablename__ = "user_center_permisos"
     usuario_id: int = Field(foreign_key="usuarios.id", primary_key=True, index=True)
     centro_id: int = Field(foreign_key="centros.id", primary_key=True, index=True)
@@ -107,11 +123,17 @@ class UserCenterPermiso(TimestampMixin, table=True):
 
 
 class UserCenterPermisoDenegado(TimestampMixin, table=True):
-    """Límites por persona: permisos que su rol concede pero a esta persona se le quitan."""
+    """LIMITES por persona: permisos que su rol concede pero a ESTA persona se le quitan
+    (usuario × centro × permiso). Efectivos = (permisos del rol − denegados) ∪ directos."""
     __tablename__ = "user_center_permisos_denegados"
     usuario_id: int = Field(foreign_key="usuarios.id", primary_key=True, index=True)
     centro_id: int = Field(foreign_key="centros.id", primary_key=True, index=True)
     permiso_id: int = Field(foreign_key="permisos.id", primary_key=True, index=True)
+
+
+# El "ser colaborador" ya no es un vínculo a nivel de persona: es de cada periodo.
+# Lo representa `colaboradores.periodo_id` (1:1 con un usuario_periodos). Por eso
+# la antigua tabla user_collaborator desaparece.
 
 
 # ═══════════════════ NAVEGACIÓN / ACCESO POR SISTEMA Y ÁREA ═══════════════════
