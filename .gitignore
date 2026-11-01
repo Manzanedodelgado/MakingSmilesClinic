@@ -1,0 +1,22 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.coverage
+
+# Node / Next
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# Entorno y secretos
+.env
+.env.*
+
+# macOS
+.DS_Store
+
+# npm cache local (volumen de red)
+.npm-cache/

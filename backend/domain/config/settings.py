@@ -1,0 +1,51 @@
+"""Configuración central de la aplicación (capa de dominio)."""
+from pydantic import model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_SECRET_DEFAULT = "dev-secret-change-me"
+
+
+class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
+    database_url: str = (
+        "postgresql+psycopg://makingsmiles:makingsmiles@localhost:5433/makingsmiles"
+    )
+
+    secret_key: str = _SECRET_DEFAULT
+    environment: str = "development"
+
+    # JWT
+    jwt_algorithm: str = "HS256"
+    access_token_expire_minutes: int = 60 * 12  # 12 h
+
+    # Cookie de sesión: Secure exige HTTPS. En desarrollo va a False; fuera, se fuerza True.
+    cookie_secure: bool = False
+
+    # Seed de desarrollo (solo si environment == development).
+    seed_dev: bool = True
+
+    # URL canónica pública del frontend (enlaces de recuperación / consentimiento).
+    public_frontend_url: str = "http://localhost:3000"
+
+    # Freno al fuerza bruta en el login. 0 desactiva el freno.
+    login_max_intentos: int = 5
+    login_ventana_min: int = 15
+    login_bloqueo_min: int = 15
+
+    @model_validator(mode="after")
+    def _exigir_secreto_en_produccion(self):
+        """Fuera de development, el JWT no puede firmarse con el secreto por defecto."""
+        if self.environment.strip().lower() != "development":
+            self.cookie_secure = True
+            if not self.public_frontend_url.startswith("https://"):
+                raise ValueError("PUBLIC_FRONTEND_URL debe usar HTTPS fuera de development")
+            if self.secret_key == _SECRET_DEFAULT or len(self.secret_key) < 32:
+                raise ValueError(
+                    "SECRET_KEY inseguro para environment=%r: define un SECRET_KEY propio "
+                    "de al menos 32 caracteres." % self.environment
+                )
+        return self
+
+
+settings = Settings()
