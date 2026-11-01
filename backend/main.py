@@ -4,6 +4,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from api.geo_router import router as geo_router
 from api.auth_router import router as auth_router
 from api.paciente_auth_router import router as paciente_auth_router
 from api.config_router import router as config_router
@@ -57,6 +58,7 @@ app.add_middleware(
 )
 
 # Orden de inclusión = precedencia del legado (main.py del sistema original).
+app.include_router(geo_router)
 app.include_router(auth_router)
 app.include_router(paciente_auth_router)
 app.include_router(config_router)
