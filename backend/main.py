@@ -13,6 +13,7 @@ from api.configuracion_agenda_router import router as configuracion_agenda_route
 from api.configuracion_staff_router import router as configuracion_staff_router
 from api.configuracion_roles_router import router as configuracion_roles_router
 from api.configuracion_admin_router import router as configuracion_admin_router
+from api.pacientes_router import router as pacientes_router
 from api.uploads_router import router as uploads_router
 from api.health_router import router as health_router
 from domain.config.settings import settings
@@ -67,6 +68,7 @@ app.include_router(configuracion_agenda_router)
 app.include_router(configuracion_staff_router)
 app.include_router(configuracion_roles_router)
 app.include_router(configuracion_admin_router)
+app.include_router(pacientes_router)
 app.include_router(uploads_router)
 app.include_router(health_router)
 
