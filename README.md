@@ -21,12 +21,20 @@ Reglas de integración (ver `docs/decisiones/ADR-001` y `docs/rebuild/INFRA.md`)
 - El análisis de IA (~30 s) pasa a **asíncrono** (job + polling) para no chocar con el
   timeout de proxy de 120 s de Vercel.
 
-## Estado actual (2026-11-01)
+## Estado actual (2026-11-02)
 
-`main` = **semilla**. Contiene infraestructura, gate y especificación de paridad.
-**El código de aplicación (`frontend/` y `backend/`) está vacío: es lo que se reconstruye.**
+`main` ya tiene el **primer bloque de código** reconstruido, verificado y subido a GitHub:
 
-Sí está aquí:
+- **Backend (`backend/`)** — FastAPI + Clean Architecture. Arranca con `main.py`, ruta
+  `GET /health`, **M01 Identidad** (login bearer + cookie httpOnly, `/auth/me`,
+  `X-Centro-Id` multi-tenant, `require_permission`, reset/forgot, RBAC) y **M02 Config**
+  (CONFIG jerárquico como fuente de verdad, permiso `config.editar`). 12 tests en verde.
+- **Frontend (`frontend/`)** — Next 15 feature-first: layout raíz, página `/health`, shell
+  `(app)`, rewrite `/api/*` (en `vercel.json`), `npx tsc --noEmit` en verde.
+- `scripts/deploy-gate.sh main` en verde (el gate exige `.env` con 13 variables; en local se
+  usan placeholders, los secretos reales los aporta el propietario).
+
+Sigue aquí (sin cambios):
 - `deploy/oracle/` — compose (Caddy, FastAPI, Postgres, Redis, Evolution), Caddyfile,
   bootstrap, backups (cifrado `age`, verificación, offsite), restore, deploy-staging,
   `validate-env.sh`, `check-evolution.sh`.
@@ -36,6 +44,11 @@ Sí está aquí:
   `check.sh`, `deploy-lock.sh`, `paridad_api.py`. **Nada de scripts legacy.**
 - `docs/rebuild/` — contrato del legado y plan.
 - `docs/decisiones/` — ADR-000 y ADR-001.
+
+Pendiente (siguiente bloque): cerrar M01 (alta de personal/roles: `configuracion_staff_router`,
+`configuracion_roles_router`, `paciente_auth_router` — login OTP de la app del paciente) y M02
+(catálogos de centro/agenda/admin, apariencia/upload), y después **M03 Pacientes** según
+`MAPA-MODULOS.md`.
 
 ## Cómo continuar (resume para una sesión nueva)
 
