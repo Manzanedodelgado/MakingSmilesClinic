@@ -1,0 +1,18 @@
+name: patches-to-core gate
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run deploy gate (dry scan + area tests)
+        run: bash scripts/deploy-gate.sh

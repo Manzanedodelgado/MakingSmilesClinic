@@ -1,0 +1,334 @@
+# ============================================================================
+# deploy-oracle.yml — CI/CD de la API de STAGING (Oracle Always Free + Caddy).
+#
+# Flujo:
+#   gate    : validación estática (YAML/JSON/shell/env), deploy-gate del repo
+#   build   : imagen linux/arm64 -> GHCR (tags :<sha> y :staging)
+#   deploy  : rsync + sudo wrapper acotado + healthcheck + rollback automático
+#   rollback: MANUAL y SIN gate (emergencia) -> wrapper --rollback
+#
+# Seguridad:
+#   - Ningún `${{ ... }}` se interpola DENTRO de un `run:`: todo entra por `env:`.
+#     Así `image_tag` (input de usuario) no puede inyectar shell.
+#   - El usuario de deploy NO está en el grupo docker; solo puede ejecutar
+#     `sudo /usr/local/sbin/makingsmiles-deploy <acción>` (wrapper root acotado).
+#
+# Secretos (environment `staging`): DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY,
+#   DEPLOY_PORT, DEPLOY_KNOWN_HOSTS (opcional), STAGING_API_URL (opcional).
+# El frontend NO se despliega aquí: Vercel lo construye desde Git (INFRA §7.2).
+# ============================================================================
+name: deploy-oracle-staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "deploy (construir y desplegar) | rollback (volver a la anterior)"
+        required: true
+        default: deploy
+        type: choice
+        options: [deploy, rollback]
+      image_tag:
+        description: "Tag ya publicado en GHCR (vacío = commit actual). Solo [A-Za-z0-9._-]"
+        required: false
+        default: ""
+  push:
+    tags:
+      - "staging-*"
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: deploy-oracle-staging
+  cancel-in-progress: false
+
+jobs:
+  gate:
+    name: Gate estático y patches-to-core
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Dependencias de validación
+        run: |
+          set -euo pipefail
+          python3 -m pip install --quiet pyyaml
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq age
+      - name: Validar YAML, JSON, placeholders y scripts
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, pathlib, re, sys
+          import yaml
+
+          yamls = [
+              pathlib.Path('deploy/oracle/docker-compose.yml'),
+              pathlib.Path('.github/workflows/deploy-oracle.yml'),
+          ]
+          for p in yamls:
+              with p.open(encoding='utf-8') as fh:
+                  yaml.safe_load(fh)
+              print(f'YAML OK: {p}')
+
+          # Dos vercel.json: el de la raíz es la copia canónica de revisión y el de
+          # frontend/ es el operativo (Root Directory=frontend/). Deben ser iguales.
+          configs = {}
+          for f in ('vercel.json', 'frontend/vercel.json'):
+              with open(f, encoding='utf-8') as fh:
+                  configs[f] = json.load(fh)
+              print(f'JSON OK: {f}')
+          assert configs['vercel.json'] == configs['frontend/vercel.json'], \
+              'vercel.json y frontend/vercel.json han divergido'
+          for f in configs:
+              n = open(f, encoding='utf-8').read().count('api.staging.example.com')
+              assert n == 5, f'{f}: {n} apariciones del placeholder (se esperan 5)'
+              print(f'OK: 5 placeholders en {f}')
+
+          # env.example debe declarar TODAS las variables que interpola compose.
+          compose = pathlib.Path('deploy/oracle/docker-compose.yml').read_text(encoding='utf-8')
+          compose_vars = set(re.findall(r'\$\{([A-Z][A-Z0-9_]*)', compose))
+          env_text = pathlib.Path('deploy/oracle/env.example').read_text(encoding='utf-8')
+          env_keys = set(re.findall(r'^([A-Z][A-Z0-9_]*)=', env_text, re.M))
+          faltan = sorted(compose_vars - env_keys)
+          assert not faltan, f'env.example no documenta variables de compose: {faltan}'
+          print(f'OK: env.example declara las {len(compose_vars)} variables de compose')
+          PY
+          # La plantilla con placeholders DEBE ser rechazada por validate-env.sh.
+          if bash deploy/oracle/validate-env.sh deploy/oracle/env.example >/dev/null 2>&1; then
+            echo "ERROR: validate-env.sh aceptó la plantilla con placeholders" >&2; exit 1
+          fi
+          echo "OK: validate-env.sh rechaza los placeholders de env.example"
+          # Y un env "real" (relleno con valores CI) DEBE pasar.
+          python3 - <<'PY'
+          import pathlib
+          t = pathlib.Path('deploy/oracle/env.example').read_text(encoding='utf-8')
+          repl = {
+              'api.staging.example.com': 'api.ci.invalid', 'staging.example.com': 'ci.invalid',
+              'example.com': 'ci.invalid', 'ops@example.com': 'ci@ci.invalid',
+              'OWNER': 'ci-owner', 'CAMBIAR': 'ci-only-value-not-a-secret-0123456789abcdef',
+          }
+          for a, b in repl.items():
+              t = t.replace(a, b)
+          # valores derivados/forzados para el chequeo
+          lines, out = {}, []
+          for line in t.splitlines():
+              if '=' in line and not line.lstrip().startswith('#'):
+                  k, v = line.split('=', 1); lines[k] = v
+          lines['BACKUP_OFFSITE_REQUIRED'] = '0'
+          lines['BACKUP_MEDIA'] = '0'
+          lines['BACKUP_DIR'] = '/tmp/makingsmiles-ci-backups'
+          lines['API_IMAGE'] = 'ghcr.io/ci-owner/ci-api:1'
+          for k, v in lines.items():
+              out.append(f'{k}={v}')
+          pathlib.Path('/tmp/ci-staging.env').write_text('\n'.join(out) + '\n', encoding='utf-8')
+          PY
+          mkdir -p /tmp/makingsmiles-ci-backups
+          bash deploy/oracle/validate-env.sh /tmp/ci-staging.env
+          echo "OK: validate-env.sh acepta un env relleno"
+          for f in deploy/oracle/*.sh; do bash -n "$f"; echo "bash -n OK: $f"; done
+      - name: .env efímero para el gate legacy (SOLO comprobación de presencia)
+        # scripts/deploy-gate.sh exige 12 variables no vacías en .env. El gate NO
+        # usa sus valores. En CI no hay secretos reales: marcadores no-placeholder.
+        run: |
+          set -euo pipefail
+          n=0
+          for v in DATABASE_URL SECRET_KEY BACKUP_DESTINO CIFRADO_CREDENCIALES_KEY \
+                   EVOLUTION_API_KEY IMAP_HOST IMAP_USER IMAP_PASSWORD \
+                   GEMINI_API_KEY NVIDIA_API_KEY OPENROUTER_API_KEY GOOGLE_SERVICE_ACCOUNT_JSON; do
+            printf '%s=ci-gate-dummy-value-not-a-secret\n' "$v" >> .env
+            n=$((n+1))
+          done
+          echo "Gate legacy preparado con $n marcadores."
+      - name: Ejecutar deploy-gate
+        run: bash scripts/deploy-gate.sh
+
+  build:
+    name: Imagen API linux/arm64 -> GHCR
+    needs: gate
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'deploy')
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Calcular nombre de imagen (minúsculas, GHCR lo exige)
+        id: meta
+        env:
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          REPO_LOWER="$(printf '%s' "$REPO" | tr '[:upper:]' '[:lower:]')"
+          echo "image=ghcr.io/${REPO_LOWER}-api" >> "$GITHUB_OUTPUT"
+          echo "tag=$SHA" >> "$GITHUB_OUTPUT"
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - name: Login en GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build y push (arm64)
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          file: ./deploy/backend.Dockerfile
+          platforms: linux/arm64
+          push: true
+          provenance: true
+          sbom: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ${{ steps.meta.outputs.image }}:${{ steps.meta.outputs.tag }}
+            ${{ steps.meta.outputs.image }}:staging
+
+  deploy:
+    name: Desplegar en Oracle (staging)
+    needs: [gate, build]
+    if: github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.action == 'deploy')
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment:
+      name: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER_NAME: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "${DEPLOY_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "$PORT" -H "$DEPLOY_HOST" > ~/.ssh/known_hosts 2>/dev/null
+          fi
+          chmod 600 ~/.ssh/known_hosts
+          {
+            echo "Host staging-oracle"
+            echo "  HostName $DEPLOY_HOST"
+            echo "  Port $PORT"
+            echo "  User $DEPLOY_USER_NAME"
+            echo "  IdentityFile ~/.ssh/deploy_key"
+            echo "  IdentitiesOnly yes"
+            echo "  StrictHostKeyChecking yes"
+          } >> ~/.ssh/config
+          chmod 600 ~/.ssh/config
+      - name: Sincronizar configuración (nunca .env; sin tocar secretos)
+        run: |
+          set -euo pipefail
+          rsync -az -e ssh \
+            deploy/oracle/docker-compose.yml \
+            deploy/oracle/Caddyfile \
+            deploy/oracle/env.example \
+            deploy/oracle/backup-postgres.sh \
+            deploy/oracle/restore-postgres.sh \
+            deploy/oracle/deploy-staging.sh \
+            deploy/oracle/validate-env.sh \
+            deploy/oracle/check-evolution.sh \
+            staging-oracle:/opt/makingsmiles/
+          rsync -az -e ssh deploy/oracle/postgres-init/ staging-oracle:/opt/makingsmiles/postgres-init/
+      - name: Determinar y validar imagen a desplegar
+        id: image
+        env:
+          REPO: ${{ github.repository }}
+          SHA: ${{ github.sha }}
+          IMAGE_TAG_INPUT: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          TAG="$IMAGE_TAG_INPUT"
+          if [ -z "$TAG" ]; then TAG="$SHA"; fi
+          # Whitelist estricta: nada de lo que llega por input toca el shell remoto.
+          printf '%s' "$TAG" | grep -Eq '^[A-Za-z0-9._-]+$' \
+            || { echo "image_tag no válido: '$TAG'" >&2; exit 1; }
+          REPO_LOWER="$(printf '%s' "$REPO" | tr '[:upper:]' '[:lower:]')"
+          REF="ghcr.io/${REPO_LOWER}-api:${TAG}"
+          printf '%s' "$REF" | grep -Eq '^ghcr\.io/[a-z0-9][a-z0-9._/-]*:[A-Za-z0-9._-]+$' \
+            || { echo "referencia de imagen no válida: $REF" >&2; exit 1; }
+          echo "ref=$REF" >> "$GITHUB_OUTPUT"
+      - name: Deploy con healthcheck y rollback automático
+        env:
+          IMAGE_REF: ${{ steps.image.outputs.ref }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$IMAGE_REF" | grep -Eq '^ghcr\.io/[a-z0-9][a-z0-9._/-]*:[A-Za-z0-9._-]+$'
+          ssh staging-oracle "sudo /usr/local/sbin/makingsmiles-deploy deploy '$IMAGE_REF'"
+      - name: Comprobar sesión real de WhatsApp (no bloquea)
+        continue-on-error: true
+        run: ssh staging-oracle "sudo /usr/local/sbin/makingsmiles-deploy check-evolution"
+      - name: Smoke test público (si STAGING_API_URL está definido)
+        env:
+          STAGING_API_URL: ${{ secrets.STAGING_API_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${STAGING_API_URL:-}" ]; then
+            echo "STAGING_API_URL no definido: se omite el smoke test externo (health interno ya pasó)."
+            exit 0
+          fi
+          for i in $(seq 1 12); do
+            if curl -fsS -m 5 "${STAGING_API_URL%/}/health/db"; then
+              echo; echo "Smoke test OK: $STAGING_API_URL/health/db"; exit 0
+            fi
+            sleep 5
+          done
+          echo "Smoke test FALLIDO contra $STAGING_API_URL" >&2
+          exit 1
+
+  rollback:
+    name: "Rollback manual (sin gate, emergencia)"
+    # Sin `needs: gate` a propósito: un rollback de emergencia no puede quedar
+    # bloqueado por el gate ni por un build.
+    if: github.event_name == 'workflow_dispatch' && inputs.action == 'rollback'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: staging
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preparar SSH
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER_NAME: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+          PORT="${DEPLOY_PORT:-22}"
+          mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          if [ -n "${DEPLOY_KNOWN_HOSTS:-}" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          else
+            ssh-keyscan -p "$PORT" -H "$DEPLOY_HOST" > ~/.ssh/known_hosts 2>/dev/null
+          fi
+          chmod 600 ~/.ssh/known_hosts
+          {
+            echo "Host staging-oracle"
+            echo "  HostName $DEPLOY_HOST"
+            echo "  Port $PORT"
+            echo "  User $DEPLOY_USER_NAME"
+            echo "  IdentityFile ~/.ssh/deploy_key"
+            echo "  IdentitiesOnly yes"
+            echo "  StrictHostKeyChecking yes"
+          } >> ~/.ssh/config
+          chmod 600 ~/.ssh/config
+      - name: Rollback (usa .deploy/previous_image del servidor)
+        run: ssh staging-oracle "sudo /usr/local/sbin/makingsmiles-deploy rollback"

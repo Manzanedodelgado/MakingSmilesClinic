@@ -1,0 +1,116 @@
+# ============================================================================
+# Caddy de STAGING — api.staging.<dominio> (Oracle Always Free)
+#
+# Qué hace: termina TLS (Let's Encrypt automático), expone SOLO la API, aplica
+# límite de cuerpo, compresión y cabeceras de seguridad, y trata distinto:
+#   - /media/*   -> URL firmadas de corta vida; CORP cross-origin para que el
+#                   frontend en Vercel con COEP: require-corp pueda cargarlas.
+#   - /events/*  -> SSE; sin buffering y conexiones largas (token firmado de
+#                   corta vida y REUTILIZABLE durante su ventana: EventSource
+#                   reconecta solo, un ticket de un solo uso lo dejaría en 401).
+#   - resto      -> API FastAPI.
+#
+# Variables (se sustituyen desde el entorno del contenedor):
+#   API_DOMAIN, ACME_EMAIL, ACME_CA
+#
+# CORS NO se configura aquí a propósito: lo emite la propia API con
+# PUBLIC_FRONTEND_URL (origen del frontend Vercel). Añadir Access-Control-* en
+# Caddy duplicaría cabeceras y el navegador rechazaría la respuesta.
+#
+# VALIDACIÓN: `caddy validate` NO se pudo ejecutar (binario no instalado en el
+# entorno de escritura). Validado por revisión contra la documentación oficial
+# de cada directiva (enlaces citados junto a la directiva).
+# ============================================================================
+
+{
+	email {$ACME_EMAIL}
+	# CA de Let's Encrypt. Para ensayar sin gastar cuota, poner en .env:
+	#   ACME_CA=https://acme-staging-v02.api.letsencrypt.org/directory
+	# https://caddyserver.com/docs/caddyfile/options#acme-ca
+	acme_ca {$ACME_CA}
+}
+
+{$API_DOMAIN} {
+	# Límite de cuerpo en el borde. Las subidas grandes (radiografías) NO deben
+	# pasar por el rewrite de Vercel (límite 4,5 MB por función): van directas a
+	# este origen con URL firmada. 64 MiB da margen; ajústese con datos reales.
+	# https://caddyserver.com/docs/caddyfile/directives/request_body
+	request_body {
+		max_size 64MB
+	}
+
+	# Cabeceras de seguridad. HSTS sin `preload` en staging.
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# La documentación interactiva de FastAPI no se sirve en staging.
+	# Debe ser un `handle` y no `respond @docs`: en el orden de directivas de
+	# Caddy, `respond` va DESPUÉS de `handle`, así que un respond suelto no
+	# llegaría a ejecutarse (el handle por defecto ya habría respondido).
+	# https://caddyserver.com/docs/caddyfile/directives#directive-order
+	@docs path /docs* /redoc* /openapi.json
+	handle @docs {
+		respond 404
+	}
+
+	# No registrar en el access log las rutas con secretos en la query string
+	# (`?sig=` de /media, `?token=` de /events): se omiten esas peticiones del log
+	# en lugar de intentar redactarlas. Documentado:
+	# https://caddyserver.com/docs/caddyfile/directives/log_skip
+	@sensitive path /media/* /events/*
+	log_skip @sensitive
+
+	# --- Media autenticada por URL firmada, consumida CROSS-ORIGIN por Vercel ---
+	handle /media/* {
+		# Sin esta cabecera, COEP: require-corp del frontend bloquea la imagen.
+		header Cross-Origin-Resource-Policy "cross-origin"
+		# Las URLs firmadas son de corta vida; el navegador puede cachear 60 s.
+		header Cache-Control "private, max-age=60"
+		encode zstd gzip
+		reverse_proxy api:8000
+	}
+
+	# --- SSE: token firmado de corta vida en la query (EventSource no manda cabeceras) ---
+	handle /events/* {
+		# No comprimir ni bufferizar un stream. flush_interval -1 = low-latency.
+		# https://caddyserver.com/docs/caddyfile/directives/reverse_proxy#streaming
+		reverse_proxy api:8000 {
+			flush_interval -1
+			stream_timeout 1h
+		}
+	}
+
+	# --- API general ---
+	handle {
+		encode zstd gzip
+		reverse_proxy api:8000 {
+			# Salud activa del upstream: si la API no responde, Caddy deja de
+			# enviarle tráfico (y el deploy falla antes por healthcheck de Compose).
+			health_uri /health/db
+			health_interval 30s
+			health_timeout 5s
+			health_status 200
+			# X-Real-IP = peer TCP real visto por Caddy (IP del edge de Vercel en
+			# tráfico proxeado; IP del cliente si se llama directo). NO copiar el
+			# header entrante: es falsificable por el cliente. La IP real del
+			# visitante a través de Vercel sigue siendo un problema abierto (§10.5
+			# de INFRA): no se usa para decisiones de seguridad.
+			header_up X-Real-IP {remote_host}
+		}
+	}
+
+	# Log a fichero con rotación propia de Caddy (volumen caddy_data).
+	log {
+		output file /data/access.log {
+			roll_size 50MiB
+			roll_keep 10
+		}
+		format json
+	}
+}
