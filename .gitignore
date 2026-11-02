@@ -23,3 +23,6 @@ out/
 
 # macOS AppleDouble (volumen de red)
 ._*
+
+# llaves de despliegue (NUNCA en git)
+.deploy/

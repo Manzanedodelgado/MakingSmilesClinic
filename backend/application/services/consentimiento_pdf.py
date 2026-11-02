@@ -181,5 +181,5 @@ def firma_desde_datauri(datauri: str) -> Optional[bytes]:
         return None
     try:
         return base64.b64decode(datauri.split(",", 1)[1])
-    except Exception:
+    except Exception:  # raiz: datauri corrupto -> None; la firma se omite y el consentimiento vale
         return None

@@ -54,7 +54,7 @@ def analizar_evidencia(
     except LLMError as exc:
         # 503 → el frontend usa su heurístico de respaldo
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc))
-    except Exception as exc:  # noqa: BLE001 — nunca 500: la consulta no se bloquea por el copiloto
+    except Exception as exc:  # raiz: nunca 500: la consulta no se bloquea por el copiloto
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"consulta: {exc}")
 
 
@@ -117,7 +117,7 @@ def escucha_activa(
         )
     except LLMError as exc:
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, str(exc))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # raiz: fallo del copiloto de escucha -> 503 explicito; la peticion no queda colgada
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"escucha: {exc}")
 
 
@@ -142,7 +142,7 @@ def guardar_soap(
         )
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # raiz: fallo del copiloto -> 503 explicito; no rompe la consulta
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"soap: {exc}")
 
 
@@ -184,7 +184,7 @@ def guardar_receta(
         )
     except ValueError as exc:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_ENTITY, str(exc))
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # raiz: fallo del copiloto -> 503 explicito; no rompe la consulta
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"receta: {exc}")
     _audit(session, user, centro_id, "recetas.crear", f"receta:{res['receta_id']}", request, {
         "paciente_id": paciente_id, "diagnostico": data.diagnostico,
@@ -499,5 +499,5 @@ def pdf_recomendaciones(
         buffer.seek(0)
         return StreamingResponse(buffer, media_type="application/pdf",
                                  headers={"Content-Disposition": f'inline; filename="recomendaciones_{rec_id}.pdf"'})
-    except Exception as e:
+    except Exception as e:  # raiz: PDF de recomendaciones: fallo -> 503 explicito, nunca 500 crudo
         raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, f"Error generando PDF: {str(e)}")

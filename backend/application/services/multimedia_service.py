@@ -185,7 +185,7 @@ class MultimediaService:
             for sub in ("RX", "Imágenes"):
                 drive_client.buscar_o_crear_carpeta(cfg, sub, folder)
             return folder
-        except Exception:  # noqa: BLE001
+        except Exception:  # raiz: Drive no disponible -> sin carpeta; el fichero local sigue valido
             return None
 
     def subir_a_drive(self, centro_id: int, paciente: Paciente, contenido: bytes, nombre: str,
@@ -213,7 +213,7 @@ class MultimediaService:
         destino = drive_client.buscar_o_crear_carpeta(cfg_w, _safe(subcarpeta), folder) or folder
         try:
             return drive_client.subir(cfg_w, filename=nombre, content=contenido, mime=mime, folder_id=destino).get("id")
-        except Exception:  # noqa: BLE001
+        except Exception:  # raiz: Drive caido -> sin id remoto; no rompe la subida local
             return None
 
     # ── Foto de perfil desde Drive ──
@@ -303,7 +303,7 @@ class MultimediaService:
             return None
         try:
             rel = _dec(enc_rel)
-        except Exception:  # noqa: BLE001
+        except Exception:  # raiz: ruta codificada corrupta -> None; nunca se sirve fuera de la carpeta
             return None
         base = carpeta.resolve()
         target = (carpeta / rel).resolve()

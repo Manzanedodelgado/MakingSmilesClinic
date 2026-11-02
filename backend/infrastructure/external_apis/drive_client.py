@@ -143,7 +143,7 @@ def buscar_o_crear_carpeta(cfg: dict, nombre: str, parent_id: str) -> Optional[s
                         params={"supportsAllDrives": "true", "fields": "id"}, json=meta,
                         headers={"Authorization": f"Bearer {token}"}, timeout=20)
         return r2.json().get("id") if r2.status_code in (200, 201) else None
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return None
 
 
@@ -165,7 +165,7 @@ def buscar_subcarpeta_prefijo(cfg: dict, parent_id: str, prefijo: str) -> Option
             if (f.get("name") or "").startswith(prefijo):
                 return f["id"]
         return None
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return None
 
 
@@ -182,7 +182,7 @@ def listar_imagenes(cfg: dict, folder_id: str) -> list[dict]:
             "supportsAllDrives": "true", "includeItemsFromAllDrives": "true", **extra},
             headers=headers, timeout=30)
         return r.json().get("files", []) if r.status_code == 200 else []
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return []
 
 
@@ -197,7 +197,7 @@ def listar_subcarpetas(cfg: dict, folder_id: str) -> list[dict]:
             "supportsAllDrives": "true", "includeItemsFromAllDrives": "true", **extra},
             headers=headers, timeout=20)
         return r.json().get("files", []) if r.status_code == 200 else []
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return []
 
 
@@ -211,7 +211,7 @@ def descargar_media(cfg: dict, file_id: str) -> Optional[tuple[bytes, str]]:
         if r.status_code != 200:
             return None
         return r.content, r.headers.get("Content-Type", "application/octet-stream")
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return None
 
 
@@ -241,7 +241,7 @@ def thumbnail(cfg: dict, file_id: str, size: int = 400) -> Optional[tuple[bytes,
         if t.status_code != 200:
             return descargar_media(cfg, file_id)
         return t.content, t.headers.get("Content-Type", "image/jpeg")
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return None
 
 
@@ -253,7 +253,7 @@ def descargar(cfg: dict, file_id: str) -> Optional[bytes]:
                       params={"alt": "media", "supportsAllDrives": "true", **extra},
                       headers=headers, timeout=60)
         return r.content if r.status_code == 200 else None
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return None
 
 
@@ -266,7 +266,7 @@ def mover_fichero(cfg: dict, file_id: str, add_parent: str, remove_parent: str) 
             "supportsAllDrives": "true", "fields": "id"},
             headers={"Authorization": f"Bearer {token}"}, timeout=20)
         return r.status_code in (200, 201)
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return False
 
 
@@ -276,5 +276,5 @@ def test(cfg: dict) -> dict:
     try:
         _access_token(cfg)
         return {"ok": True}
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # raiz: cliente externo: fallo de red/HTTP degrada a {ok:False}; nunca rompe al llamador
         return {"ok": False, "error": str(e)}

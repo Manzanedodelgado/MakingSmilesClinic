@@ -22,7 +22,7 @@ def ping(cfg: dict) -> dict:
         if r.status_code == 200:
             return {"ok": True}
         return {"ok": False, "error": f"HTTP {r.status_code}"}
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:  # raiz: cliente externo: fallo de red/HTTP degrada a {ok:False}; nunca rompe al llamador
         return {"ok": False, "error": str(e)}
 
 
@@ -47,7 +47,7 @@ def buscar_instancias(cfg: dict, patient_id: str) -> list[dict]:
     try:
         r = httpx.post(f"{cfg['url']}/tools/find", json=body, headers=_headers(cfg), timeout=15)
         return r.json() if r.status_code == 200 else []
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return []
 
 
@@ -90,7 +90,7 @@ def patient_id_de_instancia(cfg: dict, instance_id: str) -> Optional[str]:
         r = httpx.get(f"{cfg['url']}/instances/{instance_id}/tags", params={"simplify": ""},
                       headers=_headers(cfg), timeout=10)
         return r.json().get("PatientID") if r.status_code == 200 else None
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return None
 
 
@@ -101,7 +101,7 @@ def get_changes(cfg: dict, since: int = 0, limit: int = 100) -> Optional[dict]:
         r = httpx.get(f"{cfg['url']}/changes", params={"since": since, "limit": limit},
                       headers=_headers(cfg), timeout=15)
         return r.json() if r.status_code == 200 else None
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return None
 
 
@@ -112,7 +112,7 @@ def tags_de_instancia(cfg: dict, instance_id: str) -> dict:
         r = httpx.get(f"{cfg['url']}/instances/{instance_id}/tags", params={"simplify": ""},
                       headers=_headers(cfg), timeout=10)
         return r.json() if r.status_code == 200 else {}
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return {}
 
 
@@ -126,5 +126,5 @@ def rendered(cfg: dict, instance_id: str, width: Optional[int] = None) -> Option
         if r.status_code != 200:
             return None
         return r.content, r.headers.get("Content-Type", "image/jpeg")
-    except Exception:  # noqa: BLE001
+    except Exception:  # raiz: cliente externo: fallo de red/HTTP/parseo degrada (None/False); nunca rompe al llamador
         return None

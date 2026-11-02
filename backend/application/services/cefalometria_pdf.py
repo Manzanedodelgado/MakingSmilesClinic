@@ -54,7 +54,7 @@ def informe_pdf(*, imagen_bytes: bytes, analisis_label: str, analisis: str,
     try:
         pix = fitz.Pixmap(imagen_bytes)
         iw, ih = pix.width, pix.height
-    except Exception:
+    except Exception:  # raiz: imagen ilegible -> sin escala; el PDF sale sin esa imagen
         iw, ih = 0, 0
     if iw and ih:
         escala = min(destino.width / iw, destino.height / ih)

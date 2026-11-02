@@ -413,47 +413,7 @@ def borrar_acto(paciente_id: int, acto_id: int, request: Request,
     return {"ok": True}
 
 
-# ─────────────────────────── PLAN DE PREVISTOS ───────────────────────────
-@router.get("/{paciente_id}/previstos")
-def previstos(paciente_id: int,
-              centro_id: int = Depends(get_current_centro),
-              user: CurrentUser = Depends(require_permission("pacientes.ver")),
-              session: Session = Depends(get_session)) -> dict:
-    """PLAN del paciente: lo aceptado y aún no realizado (tratamientos_previstos), agrupado por
-    presupuesto, con la fase en `etiqueta` ("Mensualidad i/N"). Un previsto sale del plan al
-    consumirse (crear acto con previsto_id) o al cancelarse/reabrirse su presupuesto.
-    Ver docs/PROTOCOLO-PRESUPUESTOS.md §Reglas 5. (tratamientos_previstos no tiene SQLModel: SQL crudo.)"""
-    p = _get_paciente(session, centro_id, paciente_id)
-    rows = session.connection().execute(text("""
-        SELECT tp.id, tp.tratamiento_id, t.nombre AS tratamiento, t.tipo_actuacion,
-               tp.piezas, tp.zona_boca, tp.importe, tp.colaborador_id, tp.notas AS etiqueta,
-               tp.presupuesto_linea_id AS linea_id,
-               pr.id AS pre_id, pr.num_pre, pr.estado_id, pr.fecha
-        FROM tratamientos_previstos tp
-        JOIN presupuesto_lineas pl ON pl.id = tp.presupuesto_linea_id
-        JOIN presupuestos pr ON pr.id = pl.presupuesto_id
-        LEFT JOIN tratamientos t ON t.id = tp.tratamiento_id
-        WHERE tp.paciente_id = :pac AND tp.centro_id = :centro
-        ORDER BY pr.num_pre DESC, pl.num_linea, tp.num_tto NULLS FIRST, tp.id
-    """), {"pac": p.id, "centro": centro_id}).mappings().all()
-    estados = {e.id: e.nombre for e in session.exec(select(EstadoPresupuesto)).all()}
-    grupos: dict[int, dict] = {}
-    for r in rows:
-        g = grupos.setdefault(r["pre_id"], {
-            "id": r["pre_id"], "num": r["num_pre"], "estado": estados.get(r["estado_id"]) or "—",
-            "fecha": r["fecha"].isoformat() if r["fecha"] else None, "previstos": [],
-        })
-        g["previstos"].append({
-            "id": r["id"], "tratamiento_id": r["tratamiento_id"],
-            "tratamiento": r["tratamiento"] or "—", "tipo_actuacion": r["tipo_actuacion"],
-            "pieza": r["piezas"], "zona_boca": r["zona_boca"],
-            "importe": float(r["importe"] or 0), "colaborador_id": r["colaborador_id"],
-            "etiqueta": r["etiqueta"], "linea_id": r["linea_id"],
-        })
-    return {"presupuestos": list(grupos.values())}
 
-
-# ─────────────────────────── ALERTAS / MEDICACIÓN ───────────────────────────
 @router.get("/{paciente_id}/alertas")
 def alertas(paciente_id: int,
             centro_id: int = Depends(get_current_centro),

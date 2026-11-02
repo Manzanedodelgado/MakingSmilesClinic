@@ -447,7 +447,7 @@ def filiacion(paciente_id: int,
 
 
 class PacienteUpdate(BaseModel):
-    """Parche de filiación. Todos opcionales — solo se aplican los campos enviados."""
+    """Actualización de filiación: todos los campos son opcionales; solo se aplican los enviados."""
     nombre: Optional[str] = None
     apellidos: Optional[str] = None
     nif: Optional[str] = None
@@ -1214,7 +1214,7 @@ def _parse_fecha_es(s) -> date:
     try:
         dd, mm, yy = str(s).split("/")
         return date(int(yy), int(mm), int(dd))
-    except Exception:
+    except Exception:  # raiz: fecha ilegible -> hoy; el formulario no se bloquea por formato
         return date.today()
 
 

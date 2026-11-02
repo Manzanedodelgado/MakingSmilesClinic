@@ -304,7 +304,7 @@ def enviar(cid: int, request: Request,
             base = origen if origen.startswith("https://") else settings.public_frontend_url.rstrip("/")
             enlace = f"{base}/firmar/{c.signing_code}"
             svc.enviar_texto(centro_id, telefono, f"Puedes leerlo y firmarlo con el dedo aquí:\n\n{enlace}")
-    except Exception as e:  # noqa: BLE001 — Evolution caído / número inválido
+    except Exception as e:  # raiz: Evolution caido / numero invalido -> se informa al llamador; el consentimiento no se pierde
         raise HTTPException(status.HTTP_502_BAD_GATEWAY, f"WhatsApp no ha podido enviarlo: {e}")
     AuthService(session).audit("consentimiento.enviar", usuario_id=user.usuario_id, centro_id=centro_id,
                                recurso=f"consentimiento:{c.id}", ip=request.client.host if request.client else None,

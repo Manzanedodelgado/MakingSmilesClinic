@@ -30,5 +30,5 @@ def send_email(session: Session, to: str, subject: str, html: str) -> bool:
                 s.login(user, pw)
             s.sendmail(remitente, [to], msg.as_string())
         return True
-    except Exception:
+    except Exception:  # raiz: SMTP caido -> False; el llamador decide el fallback
         return False

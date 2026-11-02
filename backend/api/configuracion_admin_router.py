@@ -214,7 +214,7 @@ def editar_fila(
     sql = f'UPDATE "{nombre}" SET {sets} {where_sql}'
     try:
         res = session.execute(text(sql), params); session.commit()
-    except Exception as exc:
+    except Exception as exc:  # raiz: explorador de BD: SQL invalido/tabla ausente -> rollback + error controlado
         session.rollback()
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"No se pudo actualizar: {str(exc).splitlines()[0]}")
     AuthService(session).audit("admin.tabla.editar", usuario_id=user.usuario_id, centro_id=centro_id,
@@ -260,7 +260,7 @@ async def import_csv(
         session.commit()
     except HTTPException:
         session.rollback(); raise
-    except Exception as exc:
+    except Exception as exc:  # raiz: operacion admin: error revierte la transaccion y se informa; nunca deja la BD a medias
         session.rollback()
         raise HTTPException(status.HTTP_400_BAD_REQUEST, f"Fila {insertadas + 1}: {str(exc).splitlines()[0]}")
     AuthService(session).audit("admin.tabla.import", usuario_id=user.usuario_id, centro_id=centro_id,

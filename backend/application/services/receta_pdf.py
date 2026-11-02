@@ -34,7 +34,7 @@ def _barcode_png(codigo: str) -> Optional[bytes]:
         barcode.Code128(codigo, writer=ImageWriter()).write(
             buf, options={"write_text": False, "module_height": 10, "quiet_zone": 1})
         return buf.getvalue()
-    except Exception:  # noqa: BLE001 — el número en texto ya es suficiente si esto falla
+    except Exception:  # raiz: el numero en texto ya es suficiente; el PDF no se bloquea
         return None
 
 

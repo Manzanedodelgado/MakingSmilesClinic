@@ -120,7 +120,7 @@ def analizar(session: Session, centro_id: int, evidencia: str, incognitas: list[
             "nueva": nueva,
             "explica": str(data.get("explica") or "ia")[:40],
         }
-    except Exception as e:  # noqa: BLE001 — parseo robusto: nunca 500, siempre fallback limpio
+    except Exception as e:  # raiz: parseo robusto: nunca 500, siempre fallback limpio
         raise LLMError(f"Respuesta LLM no parseable: {e}") from e
 
 
@@ -400,7 +400,7 @@ def escuchar_visita(session: Session, centro_id: int, paciente_id: int, texto: s
         data: dict[str, Any] = json.loads(_solo_json(msg.get("content") or ""))
         if not isinstance(data, dict):
             raise ValueError("no es objeto")
-    except Exception as e:  # noqa: BLE001 — parseo robusto
+    except Exception as e:  # raiz: parseo robusto: nunca 500, siempre fallback limpio
         raise LLMError(f"Respuesta LLM no parseable: {e}") from e
 
     soap_in = data.get("soap") if isinstance(data.get("soap"), dict) else {}

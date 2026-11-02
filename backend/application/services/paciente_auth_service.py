@@ -179,7 +179,7 @@ class PacienteAuthService:
                 )
                 ComunicacionService(self.session).enviar_texto(paciente.centro_id, paciente.telefono_movil, texto)
                 canal = "whatsapp"
-            except Exception:
+            except Exception:  # raiz: sin Evolution -> cae a email; el login OTP no se bloquea
                 logger.warning("OTP: fallo envío WhatsApp para paciente %s, probando email", paciente.id)
 
         if canal is None and paciente.email:
