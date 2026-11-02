@@ -40,6 +40,15 @@ class Settings(BaseSettings):
     # Token de la app nativa del paciente: vida larga (30 días), sin refresh en v1.
     paciente_token_expire_minutes: int = 60 * 24 * 30
 
+    # Tiempo real (SSE): bus de eventos por Redis pub/sub. Vacío o Redis caído =>
+    # fallback a memoria (dev local sin Redis sigue funcionando, con 1 worker).
+    redis_url: str = ""
+
+    # Relé de PLAN B para los operadores de OpenJarvis: con URL, Alex contesta a través
+    # de su operador de Jarvis; vacío = Alex responde aquí. Clave compartida con Jarvis.
+    jarvis_operador_url: str = ""
+    jarvis_operador_key: str = ""
+
     @model_validator(mode="after")
     def _exigir_secreto_en_produccion(self):
         """Fuera de development, el JWT no puede firmarse con el secreto por defecto."""
