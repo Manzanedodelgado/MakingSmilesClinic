@@ -38,6 +38,7 @@ from api.motion_router import router as motion_router
 from api.voicebot_router import router as voicebot_router
 from api.gestoria_router import router as gestoria_router
 from api.gestor_ia_router import router as gestor_ia_router
+from api.ws_router import router as ws_router
 from api.informes_router import router as informes_router
 from api.consentimientos_router import router as consentimientos_router
 from api.casos_ortodoncia_router import router as casos_ortodoncia_router
@@ -48,6 +49,8 @@ from api.llm_router import router as llm_router
 from api.uploads_router import router as uploads_router
 from api.media_router import router as media_router
 from api.inicio_router import router as inicio_router
+from api.agentes_db_router import router as agentes_db_router
+from api.agentes_router import router as agentes_router
 from api.health_router import router as health_router
 from domain.config.settings import settings
 
@@ -126,6 +129,7 @@ app.include_router(motion_router)
 app.include_router(voicebot_router)
 app.include_router(gestoria_router)
 app.include_router(gestor_ia_router)
+app.include_router(ws_router)
 app.include_router(informes_router)
 app.include_router(consentimientos_router)
 app.include_router(casos_ortodoncia_router)
@@ -136,6 +140,8 @@ app.include_router(llm_router)
 app.include_router(uploads_router)
 app.include_router(media_router)
 app.include_router(inicio_router)
+app.include_router(agentes_db_router)
+app.include_router(agentes_router)
 app.include_router(health_router)
 
 
