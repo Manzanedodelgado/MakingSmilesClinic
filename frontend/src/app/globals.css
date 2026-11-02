@@ -1,0 +1,164 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Inter local fallback — la fuente se carga en layout.tsx vía Google Fonts. */
+:root {
+  --brand: #1500a0;
+  --brand-navy: #065AED;
+  --brand-cyan: #1ca0d1;
+}
+
+html,
+body {
+  margin: 0;
+  font-family: var(--font-inter), Inter, system-ui, sans-serif;
+  /* Sin -webkit-font-smoothing (queda en `auto`, como .37): `antialiased`
+     adelgazaba el texto y lo hacía parecer más fino que SmilePro. Peso base 400. */
+}
+
+/* La app de gestión es densa: scrollbars finas como en SmilePro. */
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+/* ALERTAS de la cabecera de paciente: fluctúa SOLO el texto (color + brillo) cuando hay datos críticos. */
+@keyframes alertasTextFluct {
+  0%, 100% { color: #FF007F; text-shadow: 0 0 3px rgba(255,0,127,0.25); }
+  50%      { color: #ff66b2; text-shadow: 0 0 12px rgba(255,0,127,0.95); }
+}
+.alertas-text-pulse { animation: alertasTextFluct 1.15s ease-in-out infinite; }
+
+/* Barra superior (nombre del centro + tipo de usuario): relleno en el color
+   corporativo y CONTORNO de cada letra en un tono más claro. `paint-order:
+   stroke fill` es imprescindible: sin él el contorno se pinta ENCIMA del trazo
+   y a 12px emborrona la letra en vez de delinearla. Sin brillo/fluorescencia. */
+.neon-topbar {
+  color: #FFD9DD;
+  -webkit-text-stroke: 0.8px #FF3EA5;
+  paint-order: stroke fill;
+}
+
+/* Interletrado UNIFORME en toda la web = como el rail "Pacientes" (sin espaciado).
+   Neutraliza todas las clases tracking-* de Tailwind y los letterSpacing inline. */
+*, *::before, *::after { letter-spacing: normal !important; }
+
+/* Emergentes de "Gestionar la cita" (Inicio): aparecen escalonados, subiendo un poco. */
+@keyframes emerge {
+  from { opacity: 0; transform: translateY(10px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — fuente única de la estética MakingSmiles (estilo GesdenOne).
+   PALETA VETADA: rojo, naranja y verde puro. Semánticos:
+     · ok/éxito   → TURQUESA   · alerta/aviso → VIOLETA   · error/destructivo → MAGENTA
+   Los componentes (config-styles, modal-styles, Clinical*) cuelgan de aquí.
+   ══════════════════════════════════════════════════════════════════════ */
+:root {
+  /* Marca */
+  --ms-brand: #1500A0;        /* navy corporativo */
+  --ms-brand-2: #065AED;      /* azul de acción */
+  --ms-accent: #1CA0D1;       /* cian de etiquetas/foco */
+  --ms-bar: #1E40C8;          /* barra superior de la app */
+  --ms-cyan-line: #6FE6FF;    /* línea flúor bajo barra/rail */
+
+  /* Semánticos */
+  --ms-ok: #20BEAB;      --ms-ok-strong: #0F8C7D;  --ms-ok-soft: #E6F7F4;  --ms-ok-line: #9FE6DB;
+  --ms-warn: #7C3AED;    --ms-warn-strong: #6D28D9; --ms-warn-soft: #EDE8FD; --ms-warn-line: #C4B5FD;
+  --ms-err: #C026D3;     --ms-err-strong: #A21CAF;  --ms-err-soft: #FBEAFD;  --ms-err-line: #E9A8F5;
+  --ms-info: #21A2E5;    --ms-info-strong: #073D8D; --ms-info-soft: #E7F6FD; --ms-info-line: #BFE4F7;
+
+  /* Neutros */
+  --ms-bg: #FFFFFF;
+  --ms-surface: #FFFFFF;
+  --ms-text: #1F2933;
+  --ms-muted: #6B7280;
+  --ms-border: #E3E7ED;
+
+  /* Forma y ritmo */
+  --ms-radius: 6px;
+  --ms-sp-1: 4px; --ms-sp-2: 8px; --ms-sp-3: 12px; --ms-sp-4: 16px; --ms-sp-6: 24px;
+  --ms-fs-1: 11px; --ms-fs-2: 13px; --ms-fs-3: 15px; --ms-fs-4: 18px;
+}
+
+/* ── 1. Selects estilo GesdenOne: sin chrome nativo + chevron cian propio ── */
+select:not([multiple]) {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 26px !important;              /* deja sitio al chevron */
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%231ca0d1' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 9px center;
+}
+
+/* ── 2. Chrome autofill: el azul #E8F0FE de Chrome pega con la paleta → blanco ── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px #fff inset;
+  -webkit-text-fill-color: var(--ms-text);
+  caret-color: var(--ms-text);
+  transition: background-color 99999s ease-in-out 0s;
+}
+
+/* ── 3. Foco visible accesible en todos los controles (botones/enlaces/roles) ── */
+button:focus-visible,
+a:focus-visible,
+[role="button"]:focus-visible,
+[role="tab"]:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--ms-accent);
+  outline-offset: 1px;
+}
+
+/* ── 4. Sistema de badges/pastillas semánticas ── */
+.ms-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 1px 8px; border-radius: 9999px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; line-height: 1.5;
+  border: 1px solid transparent;
+}
+.ms-badge--ok    { background: var(--ms-ok-soft);    border-color: var(--ms-ok-line);    color: var(--ms-ok-strong); }
+.ms-badge--warn  { background: var(--ms-warn-soft);  border-color: var(--ms-warn-line);  color: var(--ms-warn-strong); }
+.ms-badge--err   { background: var(--ms-err-soft);   border-color: var(--ms-err-line);   color: var(--ms-err-strong); }
+.ms-badge--info  { background: var(--ms-info-soft);  border-color: var(--ms-info-line);  color: var(--ms-info-strong); }
+.ms-badge--solid-ok   { background: var(--ms-ok);    border-color: var(--ms-ok);    color: #fff; }
+.ms-badge--solid-info { background: var(--ms-brand-2); border-color: var(--ms-brand-2); color: #fff; }
+
+/* ── 5. Tablas de configuración: celdas con aire + cabecera sticky cian ── */
+.ms-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.ms-table thead th {
+  position: sticky; top: 0; z-index: 5;
+  background: #1CA0D1;                                        /* GesdenOne 2023: cabecera cian */
+  border-bottom: 1px solid #1590C0;
+  height: 30px; padding: 0 12px; text-align: left;
+  font-size: 13px; font-weight: 700; color: #FFFFFF;
+}
+.ms-table tbody td {
+  height: 40px; padding: 0 12px; font-size: 13px; color: #333333;   /* filas de 40 px (GesdenOne 2023) */
+  border-bottom: 1px solid var(--ms-border);
+}
+.ms-table tbody tr:hover td { background: var(--ms-info-soft); }
+
+/* ── 6. Estado vacío uniforme (mensaje + icono centrados) ── */
+.ms-empty {
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 14px 10px; font-size: 12px; font-style: italic; color: #9aa7b2;
+}
+
+/* Rail lateral desktop:Visible solo ≥lg. Clase propia (una sola hoja, orden garantizado)
+   para que ningún chunk CSS de una ruta concreta invierta hidden/lg:block y tape el rail
+   (ocurría en /pacientes/[id]/*). */
+.rail-desktop { display: none; }
+@media (min-width: 1024px) {
+  .rail-desktop { display: block; }
+}

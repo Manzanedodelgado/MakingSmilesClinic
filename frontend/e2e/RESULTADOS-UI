@@ -1,0 +1,271 @@
+# Resultados de prueba funcional de la UI
+
+Siguiendo `docs/INVENTARIO-UI.md`. App real (100.86.41.61) · Test Admin (SUPERADMIN) · paciente 4134.
+29/8/2026, 17:24:45
+
+Cada acción guarda captura `antes`/`después` en `e2e/pruebas-ui/`.
+**Leyenda:** ✅ efecto claro · ➡️ navega · 🪟 abre panel · 🔄 llama API · ⚠️ sin cambio visible · 🔲 no encontrado · ❌ error
+
+---
+
+## 1. `/login`
+
+- ⚠️ **Icono ojo (ver/ocultar contraseña)** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/001_login-ojo_antes.png) · [después](pruebas-ui/001_login-ojo_despues.png)
+- ⚠️ **Icono ojo — 2º clic (vuelve a ocultar)** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/002_login-ojo2_antes.png) · [después](pruebas-ui/002_login-ojo2_despues.png)
+- ⚠️ **Checkbox "Recordar usuario"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/003_login-recordar_antes.png) · [después](pruebas-ui/003_login-recordar_despues.png)
+- **Enlace "¿Olvidaste tu contraseña?"** — ➡️ `/recuperar`  · [antes](pruebas-ui/004_login-olvido_antes.png) · [después](pruebas-ui/004_login-olvido_despues.png)
+- ⚠️ **Botón "Acceder" sin credenciales** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/005_login-acceder-vacio_antes.png) · [después](pruebas-ui/005_login-acceder-vacio_despues.png)
+
+## 2. `/recuperar`
+
+- ⚠️ **Botón "Enviar enlace" sin email** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/006_recuperar-vacio_antes.png) · [después](pruebas-ui/006_recuperar-vacio_despues.png)
+- **Botón "Enviar enlace" con email** — 🔄 `POST /api/auth/forgot`  · [antes](pruebas-ui/007_recuperar-envio_antes.png) · [después](pruebas-ui/007_recuperar-envio_despues.png)
+- **Enlace "← Volver al acceso"** — ➡️ `/login`  · [antes](pruebas-ui/008_recuperar-volver_antes.png) · [después](pruebas-ui/008_recuperar-volver_despues.png)
+
+## 3. `/restablecer` (sin token)
+
+- **Enlace "Solicitar uno nuevo"** — ➡️ `/recuperar`  · [antes](pruebas-ui/009_restablecer-solicitar_antes.png) · [después](pruebas-ui/009_restablecer-solicitar_despues.png)
+
+_(login OK → `/login`)_
+
+
+_(login OK → `/agenda`)_
+
+
+## 0. Chrome — rail lateral
+
+- ⚠️ **Rail → "Inicio"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/001_rail-inicio_antes.png) · [después](pruebas-ui/001_rail-inicio_despues.png)
+- **Rail → "Agenda"** — ➡️ `/agenda`  · [antes](pruebas-ui/002_rail-agenda_antes.png) · [después](pruebas-ui/002_rail-agenda_despues.png)
+- **Rail → "Pacientes"** — ➡️ `/pacientes`  · [antes](pruebas-ui/003_rail-pacientes_antes.png) · [después](pruebas-ui/003_rail-pacientes_despues.png)
+- **Rail → "WhatsApp"** — ➡️ `/comunicacion`  · [antes](pruebas-ui/004_rail-whatsapp_antes.png) · [después](pruebas-ui/004_rail-whatsapp_despues.png)
+- **Rail → "Gestoría"** — ➡️ `/gestoria/facturacion`  · [antes](pruebas-ui/005_rail-gestoria_antes.png) · [después](pruebas-ui/005_rail-gestoria_despues.png)
+- **Rail → "Informes"** — ➡️ `/informes`  · [antes](pruebas-ui/006_rail-informes_antes.png) · [después](pruebas-ui/006_rail-informes_despues.png)
+- **Rail → "Config"** — ➡️ `/configuracion/clinica/centro`  · [antes](pruebas-ui/007_rail-config_antes.png) · [después](pruebas-ui/007_rail-config_despues.png)
+- **Rail → "SuperUser"** — ➡️ `/superuser`  · [antes](pruebas-ui/008_rail-superuser_antes.png) · [después](pruebas-ui/008_rail-superuser_despues.png)
+
+## 0. Chrome — barra superior
+
+- ⚠️ **Logo "gota" (esquina sup. izq.)** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/009_top-logo_antes.png) · [después](pruebas-ui/009_top-logo_despues.png)
+- ⚠️ **Chip "SUPERADMINISTRADOR"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/010_top-rol_antes.png) · [después](pruebas-ui/010_top-rol_despues.png)
+- ⚠️ **"Test Admin"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/011_top-user_antes.png) · [después](pruebas-ui/011_top-user_despues.png)
+
+_(parte A2 escrita — 11 elementos)_
+
+
+## 5. `/agenda`
+
+- ⚠️ **Selector "AGENDA 1" ▾** — ⚠️ cambio menor en pantalla  · [antes](pruebas-ui/001_agenda-selector_antes.png) · [después](pruebas-ui/001_agenda-selector_despues.png)
+- **Flecha "‹" día anterior** — ✅ el contenido cambia (59 car.)  · [antes](pruebas-ui/002_agenda-prev_antes.png) · [después](pruebas-ui/002_agenda-prev_despues.png)
+- **Flecha "›" día siguiente** — ✅ el contenido cambia (716 car.)  · [antes](pruebas-ui/003_agenda-next_antes.png) · [después](pruebas-ui/003_agenda-next_despues.png)
+- ⚠️ **Botón "HOY"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/004_agenda-hoy_antes.png) · [después](pruebas-ui/004_agenda-hoy_despues.png)
+- **Botón "SEMANA"** — ✅ el contenido cambia (158 car.)  · [antes](pruebas-ui/005_agenda-semana_antes.png) · [después](pruebas-ui/005_agenda-semana_despues.png)
+- ⚠️ **Botón "DÍA"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/006_agenda-dia_antes.png) · [después](pruebas-ui/006_agenda-dia_despues.png)
+- ⚠️ **Botón "ANULADAS"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/007_agenda-anuladas_antes.png) · [después](pruebas-ui/007_agenda-anuladas_despues.png)
+- ⚠️ **Desplegable "GABINETES" ▾** — ⚠️ cambio menor en pantalla  · [antes](pruebas-ui/008_agenda-gabinetes_antes.png) · [después](pruebas-ui/008_agenda-gabinetes_despues.png)
+- **Desplegable "DOCTORES" ▾** — ✅ el contenido cambia (115 car.)  · [antes](pruebas-ui/009_agenda-doctores_antes.png) · [después](pruebas-ui/009_agenda-doctores_despues.png)
+- **Botón "+ NUEVA CITA"** — ✅ el contenido cambia (76 car.)  · [antes](pruebas-ui/010_agenda-nueva-cita_antes.png) · [después](pruebas-ui/010_agenda-nueva-cita_despues.png)
+- ⚠️ **Panel dcha · "WHATSAPP URGENTES" 1ª fila** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/011_agenda-wa-urgente_antes.png) · [después](pruebas-ui/011_agenda-wa-urgente_despues.png)
+
+## 6. `/pacientes` — lista
+
+- ⚠️ **Cabecera-filtro "ALERTAS"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/012_pac-h-alertas_antes.png) · [después](pruebas-ui/012_pac-h-alertas_despues.png)
+- ⚠️ **Cabecera-filtro "Edad"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/013_pac-h-edad_antes.png) · [después](pruebas-ui/013_pac-h-edad_despues.png)
+- ⚠️ **Cabecera-filtro "Teléfono"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/014_pac-h-tel_antes.png) · [después](pruebas-ui/014_pac-h-tel_despues.png)
+- ⚠️ **Cabecera-filtro "Tarifa"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/015_pac-h-tarifa_antes.png) · [después](pruebas-ui/015_pac-h-tarifa_despues.png)
+- **Botón "+ NUEVO"** — ✅ el contenido cambia (579 car.)  · [antes](pruebas-ui/016_pac-nuevo_antes.png) · [después](pruebas-ui/016_pac-nuevo_despues.png)
+- ❌ **Buscador "4134" → abrir paciente** — clic falló (locator.click: Timeout 3000ms exceeded.) · [antes](pruebas-ui/017_pac-buscar-abrir_antes.png)
+
+## 7. `/comunicacion` — WhatsApp
+
+- **Botón "⏸ PAUSAR IA"** — 🔄 `POST /api/comunicacion/ia/pausar`  · [antes](pruebas-ui/018_wa-pausar_antes.png) · [después](pruebas-ui/018_wa-pausar_despues.png)
+- 🔲 **Botón "▶ REANUDAR IA" (tras pausar)** — no visible
+- **Pestaña "No leídas"** — ✅ el contenido cambia (5259 car.)  · [antes](pruebas-ui/020_wa-tab-noleidas_antes.png) · [después](pruebas-ui/020_wa-tab-noleidas_despues.png)
+- **Pestaña "Urgentes"** — ✅ el contenido cambia (1936 car.)  · [antes](pruebas-ui/021_wa-tab-urgentes_antes.png) · [después](pruebas-ui/021_wa-tab-urgentes_despues.png)
+- **Pestaña "Todas"** — ✅ el contenido cambia (7195 car.)  · [antes](pruebas-ui/022_wa-tab-todas_antes.png) · [después](pruebas-ui/022_wa-tab-todas_despues.png)
+- ⚠️ **1ª conversación de la lista** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/023_wa-conv-1_antes.png) · [después](pruebas-ui/023_wa-conv-1_despues.png)
+
+## 11. `/crm`
+
+- **Pestaña "Reactivación"** — ✅ el contenido cambia (3152 car.)  · [antes](pruebas-ui/024_crm-reactivacion_antes.png) · [después](pruebas-ui/024_crm-reactivacion_despues.png)
+- **Pestaña "Pipeline de presupuestos"** — ✅ el contenido cambia (134 car.)  · [antes](pruebas-ui/025_crm-pipeline_antes.png) · [después](pruebas-ui/025_crm-pipeline_despues.png)
+
+## 12. `/iconos`
+
+- ⚠️ **Icono ilustrado "diente"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/026_iconos-diente_antes.png) · [después](pruebas-ui/026_iconos-diente_despues.png)
+
+## 13. `/superuser`
+
+- 🔲 **Pestaña "CENTINELA"** — no visible
+- 🔲 **Pestaña "APARIENCIA"** — no visible
+- 🔲 **Pestaña "BASE DE DATOS"** — no visible
+- 🔲 **Pestaña "CENTROS"** — no visible
+- **Botón "+ NUEVO CENTRO"** — ✅ el contenido cambia (217 car.)  · [antes](pruebas-ui/031_su-nuevo-centro_antes.png) · [después](pruebas-ui/031_su-nuevo-centro_despues.png)
+- **Fila "RUBIO GARCIA DENTAL"** — ✅ el contenido cambia (938 car.)  · [antes](pruebas-ui/032_su-fila-centro_antes.png) · [después](pruebas-ui/032_su-fila-centro_despues.png)
+
+_(parte B2 escrita — 32 elementos)_
+
+## 14. `/pacientes/4767/ficha` — Ficha del paciente
+
+- ⚠️ **Botón "ALERTAS" (cabecera)** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/001_ficha-alertas_antes.png) · [después](pruebas-ui/001_ficha-alertas_despues.png)
+- 🔲 **Icono portapapeles (odontograma)** — no visible
+- **Botón "🎤 CONSULTA"** — ✅ el contenido cambia (163 car.)  · [antes](pruebas-ui/003_ficha-consulta_antes.png) · [después](pruebas-ui/003_ficha-consulta_despues.png)
+- ⚠️ **Botón "✍ ESCUCHA PRO"** — ⚠️ cambio menor en pantalla  · [antes](pruebas-ui/004_ficha-escucha_antes.png) · [después](pruebas-ui/004_ficha-escucha_despues.png)
+- ⚠️ **Botón "📋 INSTRUCCIONES"** — ⚠️ cambio menor en pantalla  · [antes](pruebas-ui/005_ficha-instrucciones_antes.png) · [después](pruebas-ui/005_ficha-instrucciones_despues.png)
+- ⚠️ **Botón "REVISIÓN / EVALUACIÓN"** — ⚠️ cambio menor en pantalla  · [antes](pruebas-ui/006_ficha-revision_antes.png) · [después](pruebas-ui/006_ficha-revision_despues.png)
+- **Botón "TRATAMIENTO PLANIFICADO"** — ✅ el contenido cambia (43 car.)  · [antes](pruebas-ui/007_ficha-tto-plan_antes.png) · [después](pruebas-ui/007_ficha-tto-plan_despues.png)
+- **Pestaña documentos "Facturas"** — ✅ el contenido cambia (270 car.)  · [antes](pruebas-ui/008_ficha-doc-facturas_antes.png) · [después](pruebas-ui/008_ficha-doc-facturas_despues.png)
+- **Pestaña documentos "Recibo"** — ✅ el contenido cambia (266 car.)  · [antes](pruebas-ui/009_ficha-doc-recibo_antes.png) · [después](pruebas-ui/009_ficha-doc-recibo_despues.png)
+- **Pestaña documentos "Primera visita"** — ✅ el contenido cambia (282 car.)  · [antes](pruebas-ui/010_ficha-doc-primera-visita_antes.png) · [después](pruebas-ui/010_ficha-doc-primera-visita_despues.png)
+- **Pestaña documentos "Recetas"** — ✅ el contenido cambia (11828 car.)  · [antes](pruebas-ui/011_ficha-doc-recetas_antes.png) · [después](pruebas-ui/011_ficha-doc-recetas_despues.png)
+- **Pestaña documentos "Consentimientos"** — ✅ el contenido cambia (493 car.)  · [antes](pruebas-ui/012_ficha-doc-consentimientos_antes.png) · [después](pruebas-ui/012_ficha-doc-consentimientos_despues.png)
+- **Pestaña documentos "Informes"** — ➡️ `/informes`  · [antes](pruebas-ui/013_ficha-doc-informes_antes.png) · [después](pruebas-ui/013_ficha-doc-informes_despues.png)
+- **Pestaña documentos "Otros"** — ✅ el contenido cambia (264 car.)  · [antes](pruebas-ui/014_ficha-doc-otros_antes.png) · [después](pruebas-ui/014_ficha-doc-otros_despues.png)
+- **Pestaña documentos "Todos"** — ✅ el contenido cambia (277 car.)  · [antes](pruebas-ui/015_ficha-doc-todos_antes.png) · [después](pruebas-ui/015_ficha-doc-todos_despues.png)
+- **Enlace "⚭ Radiología" (multimedia)** — ✅ el contenido cambia (593 car.)  · [antes](pruebas-ui/016_ficha-multimedia-rx_antes.png) · [después](pruebas-ui/016_ficha-multimedia-rx_despues.png)
+
+_(parte C1 escrita — 16 elementos)_
+
+## 15. `/pacientes/4767/filiacion`
+
+- ⚠️ **Checkbox "Tratamiento datos (RGPD)"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/001_fil-rgpd_antes.png) · [después](pruebas-ui/001_fil-rgpd_despues.png)
+- 🔲 **Chip tarifa "PRIVADA"** — no visible
+- ⚠️ **Chip tarifa "SEGURIDAD SOCIAL"** — ⚠️ cambio menor en pantalla  · [antes](pruebas-ui/003_fil-ss_antes.png) · [después](pruebas-ui/003_fil-ss_despues.png)
+
+## 16. `/pacientes/4767/alertas`
+
+- **Botón "+ NUEVA ALERTA"** — ✅ el contenido cambia (87 car.)  · [antes](pruebas-ui/004_alertas-nueva_antes.png) · [después](pruebas-ui/004_alertas-nueva_despues.png)
+- ⚠️ **Botón "GUARDAR" (notas médicas)** — ⚠️ cambio menor en pantalla  · [antes](pruebas-ui/005_alertas-guardar_antes.png) · [después](pruebas-ui/005_alertas-guardar_despues.png)
+- **Botón "+ AÑADIR" (medicación)** — ✅ el contenido cambia (64 car.)  · [antes](pruebas-ui/006_alertas-anadir-med_antes.png) · [después](pruebas-ui/006_alertas-anadir-med_despues.png)
+
+## 17. `/pacientes/4767/cascabel`
+
+- ⚠️ **Icono recargar (anillo adherencia)** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/007_cascabel-recargar_antes.png) · [después](pruebas-ui/007_cascabel-recargar_despues.png)
+- ⚠️ **1ª fila historial de citas** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/008_cascabel-cita-fila_antes.png) · [después](pruebas-ui/008_cascabel-cita-fila_despues.png)
+
+## 19. `/pacientes/4767/documentos`
+
+- **Botón "Generar"** — ✅ el contenido cambia (160 car.)  · [antes](pruebas-ui/009_docs-generar_antes.png) · [después](pruebas-ui/009_docs-generar_despues.png)
+- **Botón "Subir documento"** — ✅ el contenido cambia (76 car.)  · [antes](pruebas-ui/010_docs-subir_antes.png) · [después](pruebas-ui/010_docs-subir_despues.png)
+- **Pestaña "Recetas"** — ✅ el contenido cambia (11558 car.)  · [antes](pruebas-ui/011_docs-tab-recetas_antes.png) · [después](pruebas-ui/011_docs-tab-recetas_despues.png)
+
+_(parte C2 escrita — 11 elementos)_
+
+## 20. `/pacientes/4767/odontograma`
+
+- **Botón "+ NUEVA EXPLORACIÓN"** — ✅ el contenido cambia (391 car.)  · [antes](pruebas-ui/001_odo-nueva-exp_antes.png) · [después](pruebas-ui/001_odo-nueva-exp_despues.png)
+- **1er diente del odontograma (clic)** — ➡️ `/pacientes/4767/ficha`  · [antes](pruebas-ui/002_odo-diente_antes.png) · [después](pruebas-ui/002_odo-diente_despues.png)
+
+## 21. `/pacientes/4767/periodontograma`
+
+- **Botón "+ NUEVO ESTUDIO"** — ✅ el contenido cambia (737 car.)  · [antes](pruebas-ui/003_perio-nuevo_antes.png) · [después](pruebas-ui/003_perio-nuevo_despues.png)
+
+## 22. `/pacientes/4767/plan-econ`
+
+- **Pestaña "DOCUMENTOS"** — ➡️ `/pacientes/4767/documentos`  · [antes](pruebas-ui/004_planecon-tab-docs_antes.png) · [después](pruebas-ui/004_planecon-tab-docs_despues.png)
+- ⚠️ **Pestaña "MOVIMIENTOS"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/005_planecon-tab-mov_antes.png) · [después](pruebas-ui/005_planecon-tab-mov_despues.png)
+
+_(parte C3 escrita — 5 elementos)_
+
+## 23. `/pacientes/4767/presupuestos`
+
+- **Botón "+ NUEVO PRESUPUESTO"** — ✅ el contenido cambia (79 car.)  · [antes](pruebas-ui/001_presu-nuevo_antes.png) · [después](pruebas-ui/001_presu-nuevo_despues.png)
+- **Botón "Cargar plantilla"** — ✅ el contenido cambia (1444 car.)  · [antes](pruebas-ui/002_presu-plantilla_antes.png) · [después](pruebas-ui/002_presu-plantilla_despues.png)
+- ⚠️ **Icono guardar (barra desglose)** — ⚠️ cambio menor en pantalla  · [antes](pruebas-ui/003_presu-guardar_antes.png) · [después](pruebas-ui/003_presu-guardar_despues.png)
+- ⚠️ **Icono imprimir (barra desglose)** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/004_presu-imprimir_antes.png) · [después](pruebas-ui/004_presu-imprimir_despues.png)
+- 🔲 **Selector "Todos los estados" ▾** — no visible
+
+## 24. `/pacientes/4767/radiologia`
+
+- ⚠️ **Botón "PPTX"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/006_rx-pptx_antes.png) · [después](pruebas-ui/006_rx-pptx_despues.png)
+- **Botón "Superponer"** — ✅ el contenido cambia (277 car.)  · [antes](pruebas-ui/007_rx-superponer_antes.png) · [después](pruebas-ui/007_rx-superponer_despues.png)
+- **Botón "DICOM"** — ✅ el contenido cambia (69 car.)  · [antes](pruebas-ui/008_rx-dicom_antes.png) · [después](pruebas-ui/008_rx-dicom_despues.png)
+- **Botón "Evolución"** — ✅ el contenido cambia (141 car.)  · [antes](pruebas-ui/009_rx-evolucion_antes.png) · [después](pruebas-ui/009_rx-evolucion_despues.png)
+- 🔲 **Icono lápiz (editar imagen)** — no visible
+- ⚠️ **Selector de tipo de imagen ▾** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/011_rx-tipo-select_antes.png) · [después](pruebas-ui/011_rx-tipo-select_despues.png)
+
+_(parte C4 escrita — 11 elementos)_
+
+## 25. `/configuracion/clinica/centro`
+
+- **Pestaña "AGENDA"** — ➡️ `/agenda`  · [antes](pruebas-ui/001_cfg-clinica-tab-agenda_antes.png) · [después](pruebas-ui/001_cfg-clinica-tab-agenda_despues.png)
+- **Pestaña "PERSONAL"** — ➡️ `/configuracion/clinica/personal`  · [antes](pruebas-ui/002_cfg-clinica-tab-personal_antes.png) · [después](pruebas-ui/002_cfg-clinica-tab-personal_despues.png)
+- **Pestaña "COLABORADORES"** — ➡️ `/configuracion/clinica/colaboradores`  · [antes](pruebas-ui/003_cfg-clinica-tab-colab_antes.png) · [después](pruebas-ui/003_cfg-clinica-tab-colab_despues.png)
+- **Checkbox día "Lunes" (horario)** — ✅ el contenido cambia (1182 car.)  · [antes](pruebas-ui/004_cfg-clinica-lunes_antes.png) · [después](pruebas-ui/004_cfg-clinica-lunes_despues.png)
+- ⚠️ **Botón "+ AÑADIR" (día festivo)** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/005_cfg-clinica-festivo_antes.png) · [después](pruebas-ui/005_cfg-clinica-festivo_despues.png)
+
+## 26. `/configuracion/admin/diseno`
+
+- **Pestaña "DOCUMENTOS"** — ➡️ `/configuracion/admin/documentos`  · [antes](pruebas-ui/006_cfg-admin-tab-docs_antes.png) · [después](pruebas-ui/006_cfg-admin-tab-docs_despues.png)
+- **Pestaña "TABLAS"** — ➡️ `/configuracion/admin/tablas`  · [antes](pruebas-ui/007_cfg-admin-tab-tablas_antes.png) · [después](pruebas-ui/007_cfg-admin-tab-tablas_despues.png)
+- ⚠️ **Item lista "Receta"** — ⚠️ cambio menor en pantalla  · [antes](pruebas-ui/008_cfg-admin-item-receta_antes.png) · [después](pruebas-ui/008_cfg-admin-item-receta_despues.png)
+- ⚠️ **Sub-pestaña "HTML avanzado"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/009_cfg-admin-html_antes.png) · [después](pruebas-ui/009_cfg-admin-html_despues.png)
+- ⚠️ **Botón "GUARDAR"** — ⚠️ cambio menor en pantalla  · [antes](pruebas-ui/010_cfg-admin-guardar_antes.png) · [después](pruebas-ui/010_cfg-admin-guardar_despues.png)
+
+_(parte D1 escrita — 10 elementos)_
+
+## 27. `/configuracion/admin/documentos`
+
+- **Sub-pestaña "CONSENTIMIENTOS"** — ✅ el contenido cambia (1037 car.)  · [antes](pruebas-ui/001_cfg-docs-tab-consent_antes.png) · [después](pruebas-ui/001_cfg-docs-tab-consent_despues.png)
+- **Sub-pestaña "PRIMERA VISITA"** — ✅ el contenido cambia (1180 car.)  · [antes](pruebas-ui/002_cfg-docs-tab-1v_antes.png) · [después](pruebas-ui/002_cfg-docs-tab-1v_despues.png)
+- **Sub-pestaña "RECOMENDACIONES"** — ✅ el contenido cambia (1100 car.)  · [antes](pruebas-ui/003_cfg-docs-tab-reco_antes.png) · [después](pruebas-ui/003_cfg-docs-tab-reco_despues.png)
+- **Sub-pestaña "CUESTIONARIOS"** — ✅ el contenido cambia (1166 car.)  · [antes](pruebas-ui/004_cfg-docs-tab-cuest_antes.png) · [después](pruebas-ui/004_cfg-docs-tab-cuest_despues.png)
+- ⚠️ **Categoría "CONSERVADORA / ENDODONCIA"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/005_cfg-docs-categoria_antes.png) · [después](pruebas-ui/005_cfg-docs-categoria_despues.png)
+
+## 28. `/configuracion/admin/tablas`
+
+- ⚠️ **Campo "Buscar tabla…"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/006_cfg-tablas-buscar_antes.png) · [después](pruebas-ui/006_cfg-tablas-buscar_despues.png)
+- **Item tabla "agendas"** — ✅ el contenido cambia (350 car.)  · [antes](pruebas-ui/007_cfg-tablas-agendas_antes.png) · [después](pruebas-ui/007_cfg-tablas-agendas_despues.png)
+- **Item tabla "auditoria"** — ✅ el contenido cambia (6996 car.)  · [antes](pruebas-ui/008_cfg-tablas-auditoria_antes.png) · [después](pruebas-ui/008_cfg-tablas-auditoria_despues.png)
+
+## 30. `/configuracion/conectores/whatsapp`
+
+- **Pestaña "VOICEBOT"** — ➡️ `/configuracion/conectores/voicebot`  · [antes](pruebas-ui/009_cfg-conn-tab-voicebot_antes.png) · [después](pruebas-ui/009_cfg-conn-tab-voicebot_despues.png)
+- **Pestaña "MAIL"** — ➡️ `/configuracion/conectores/mail`  · [antes](pruebas-ui/010_cfg-conn-tab-mail_antes.png) · [después](pruebas-ui/010_cfg-conn-tab-mail_despues.png)
+- **Pestaña "DRIVE"** — ➡️ `/configuracion/conectores/drive`  · [antes](pruebas-ui/011_cfg-conn-tab-drive_antes.png) · [después](pruebas-ui/011_cfg-conn-tab-drive_despues.png)
+- **Pestaña "RADIOGRAFÍAS"** — ➡️ `/configuracion/conectores/radiografias`  · [antes](pruebas-ui/012_cfg-conn-tab-rx_antes.png) · [después](pruebas-ui/012_cfg-conn-tab-rx_despues.png)
+- **Pestaña "SERVIDOR"** — ➡️ `/configuracion/conectores/servidor`  · [antes](pruebas-ui/013_cfg-conn-tab-servidor_antes.png) · [después](pruebas-ui/013_cfg-conn-tab-servidor_despues.png)
+- ⚠️ **Botón "ACTUALIZAR" (estado)** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/014_cfg-conn-actualizar_antes.png) · [después](pruebas-ui/014_cfg-conn-actualizar_despues.png)
+- ⚠️ **Botón "OBTENER QR"** — ⚠️ cambio menor en pantalla  · [antes](pruebas-ui/015_cfg-conn-qr_antes.png) · [después](pruebas-ui/015_cfg-conn-qr_despues.png)
+
+_(parte D2 escrita — 15 elementos)_
+
+## 31. `/configuracion/automatizaciones/reglas`
+
+- 🔲 **Toggle "Envío de automatizaciones"** — no visible
+- **Filtro "CITAS"** — ✅ el contenido cambia (1600 car.)  · [antes](pruebas-ui/002_cfg-auto-filtro-citas_antes.png) · [después](pruebas-ui/002_cfg-auto-filtro-citas_despues.png)
+- **Filtro "PACIENTES"** — ➡️ `/pacientes`  · [antes](pruebas-ui/003_cfg-auto-filtro-pac_antes.png) · [después](pruebas-ui/003_cfg-auto-filtro-pac_despues.png)
+- 🔲 **Toggle ON/OFF 1ª regla** — no visible
+- **Pestaña "EDITOR"** — ➡️ `/configuracion/automatizaciones/editor`  · [antes](pruebas-ui/005_cfg-auto-tab-editor_antes.png) · [después](pruebas-ui/005_cfg-auto-tab-editor_despues.png)
+- **Pestaña "PLANTILLAS"** — ➡️ `/configuracion/automatizaciones/plantillas`  · [antes](pruebas-ui/006_cfg-auto-tab-plantillas_antes.png) · [después](pruebas-ui/006_cfg-auto-tab-plantillas_despues.png)
+
+## 32. `/configuracion/flujos/flujos`
+
+- ⚠️ **Tarjeta flujo "Urgencia / Dolor"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/007_cfg-flujos-urgencia_antes.png) · [después](pruebas-ui/007_cfg-flujos-urgencia_despues.png)
+- **Pestaña "EDITOR"** — ➡️ `/configuracion/flujos/editor`  · [antes](pruebas-ui/008_cfg-flujos-tab-editor_antes.png) · [después](pruebas-ui/008_cfg-flujos-tab-editor_despues.png)
+
+## 33. `/configuracion/agentes/alex`
+
+- **Pestaña "ENTRENAMIENTO"** — ➡️ `/configuracion/agentes/entrenamiento`  · [antes](pruebas-ui/009_cfg-agentes-tab-entren_antes.png) · [después](pruebas-ui/009_cfg-agentes-tab-entren_despues.png)
+- **Pestaña "GESTOR IA (FACTURACIÓN)"** — ➡️ `/configuracion/agentes/gestor`  · [antes](pruebas-ui/010_cfg-agentes-tab-gestoria_antes.png) · [después](pruebas-ui/010_cfg-agentes-tab-gestoria_despues.png)
+- **Pestaña "MODELOS DE IA"** — ➡️ `/configuracion/agentes/modelos`  · [antes](pruebas-ui/011_cfg-agentes-tab-modelos_antes.png) · [después](pruebas-ui/011_cfg-agentes-tab-modelos_despues.png)
+- **Pestaña "AGENTES"** — ➡️ `/configuracion/agentes/catalogo`  · [antes](pruebas-ui/012_cfg-agentes-tab-agentes_antes.png) · [después](pruebas-ui/012_cfg-agentes-tab-agentes_despues.png)
+- **Pestaña "CENTINELA (SALUD)"** — ➡️ `/configuracion/agentes/centinela`  · [antes](pruebas-ui/013_cfg-agentes-tab-centinela_antes.png) · [después](pruebas-ui/013_cfg-agentes-tab-centinela_despues.png)
+- ⚠️ **Botón "+ AÑADIR REGLA"** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/014_cfg-agentes-anadir-regla_antes.png) · [después](pruebas-ui/014_cfg-agentes-anadir-regla_despues.png)
+
+_(parte D3 escrita — 14 elementos)_
+
+## 4. `/inicio` — Panel
+
+- **SISTEMAS · "WhatsApp"** — ➡️ `/comunicacion`  · [antes](pruebas-ui/001_inicio-sist-whatsapp_antes.png) · [después](pruebas-ui/001_inicio-sist-whatsapp_despues.png)
+- **SISTEMAS · "Alex"** — ➡️ `/configuracion/ias/alex`  · [antes](pruebas-ui/002_inicio-sist-alex_antes.png) · [después](pruebas-ui/002_inicio-sist-alex_despues.png)
+- **SISTEMAS · "Victor"** — ➡️ `/configuracion/ias/victor`  · [antes](pruebas-ui/003_inicio-sist-victor_antes.png) · [después](pruebas-ui/003_inicio-sist-victor_despues.png)
+- **SISTEMAS · "Aura"** — ➡️ `/configuracion/ias/aura`  · [antes](pruebas-ui/004_inicio-sist-aura_antes.png) · [después](pruebas-ui/004_inicio-sist-aura_despues.png)
+- **SISTEMAS · "Centinela"** — ➡️ `/configuracion/ias/centinela`  · [antes](pruebas-ui/005_inicio-sist-centinela_antes.png) · [después](pruebas-ui/005_inicio-sist-centinela_despues.png)
+- **SISTEMAS · "Buzón"** — ➡️ `/configuracion/ias/gestor`  · [antes](pruebas-ui/006_inicio-sist-buzon_antes.png) · [después](pruebas-ui/006_inicio-sist-buzon_despues.png)
+- **SISTEMAS · "Drive"** — ➡️ `/configuracion/ias/gestor`  · [antes](pruebas-ui/007_inicio-sist-drive_antes.png) · [después](pruebas-ui/007_inicio-sist-drive_despues.png)
+- **Tarjeta WHATSAPP SIN RESPONDER · 1ª fila** — ➡️ `/comunicacion`  · [antes](pruebas-ui/008_inicio-wa-fila_antes.png) · [después](pruebas-ui/008_inicio-wa-fila_despues.png)
+- ⚠️ **Tarjeta PRESUPUESTOS SIN RESPUESTA · 1ª fila** — clic aceptado, sin cambio visible  · [antes](pruebas-ui/009_inicio-presu-fila_antes.png) · [después](pruebas-ui/009_inicio-presu-fila_despues.png)
+- **Tarjeta IMPUESTOS Y PLAZOS · "Modelo 303"** — ➡️ `/gestoria/facturacion`  · [antes](pruebas-ui/010_inicio-imp-fila_antes.png) · [después](pruebas-ui/010_inicio-imp-fila_despues.png)
+- 🔲 **Tarjeta FACTURAS Y BANCO** — no visible
+
+_(parte B escrita — 11 elementos)_

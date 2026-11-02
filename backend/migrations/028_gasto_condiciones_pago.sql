@@ -1,0 +1,11 @@
+-- 028 · Separa CÓMO se paga de CUÁNDO se paga.
+--
+-- `gastos.forma_pago` acumulaba 119 valores distintos para 6 formas reales porque el OCR
+-- volcaba ahí todo lo que la factura dijera sobre el pago, mezclando tres cosas:
+--   · la forma      → "EFECTIVO", "Transferencia", "RECIBO DOMICILIADO"
+--   · el plazo      → "Vencimiento 30 días", "A la vista", "Contado", "30 Dias F/F"
+--   · la cuenta     → "ES80 0049 3157…", "Cta.Cte.: 0049 6077…"
+--
+-- La forma se normaliza a las 6 canónicas; el plazo (dato real, importa para tesorería)
+-- se conserva aquí en vez de tirarlo. Las cuentas son del proveedor, no de la factura.
+ALTER TABLE gastos ADD COLUMN IF NOT EXISTS condiciones_pago VARCHAR(300);
