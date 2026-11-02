@@ -23,38 +23,49 @@ Reglas de integración (ver `docs/decisiones/ADR-001` y `docs/rebuild/INFRA.md`)
 
 ## Estado actual (2026-11-02)
 
-`main` tiene reconstruidos, verificados y subidos a GitHub: **esqueleto + M01, M02, M03, M04,
-M05, M07 y M09 (consentimientos)**. El backend expone **146 rutas / 175 operaciones** (de las
-432/498 del contrato), con **38 tests en verde (1 skip)**, `deploy-gate.sh` en verde y
-`npx tsc --noEmit` en verde.
+**Backend reconstruido y en paridad con el legado.** `main` tiene todos los módulos M00–M19
+portados: **431 rutas / 497 operaciones** frente a las **496 operaciones** del contrato
+(`PARIDAD-API.csv`). Las **únicas 2 operaciones ausentes son las rutas PII** que se retiraron
+a propósito por seguridad (S1/S2, ver `HALLAZGOS-SEGURIDAD.md`).
 
 Completado (backend):
-- **M01 Identidad**: login bearer/cookie httpOnly, `/auth/me`, `X-Centro-Id`,
-  `require_permission`, reset/forgot, RBAC, alta de personal (`configuracion_staff_router`),
-  roles (`configuracion_roles_router`), login OTP del paciente (`paciente_auth`).
-- **M02 Config**: CONFIG jerárquico, catálogos (`configuracion_centro_router`,
-  `configuracion_agenda_router`), admin (`configuracion_admin_router`), uploads.
-- **M03 Pacientes**: `pacientes_router` (34 rutas tras retirar el bloque PII S1/S2),
-  `geo_router`, `paciente_helper`, anamnesis, multimedia.
-- **M04 Media**: `media_router` (/media autenticado anti-IDOR), `multimedia_service`,
-  `drive_client`, `orthanc_client`.
-- **M05 Agenda**: `agenda_router` (11), disponibilidad, `cita_reglas` (registrado al arranque:
-  se corrige la fragilidad del legado, que nunca lo importaba).
-- **M07 Clínica**: `clinico_router` (15), `consulta_router` (13), `cefalometria_router` (9) +
-  servicios (consulta, cefalometría, recetas PDF, presupuestos, caja, LLM).
-- **M09**: `consentimientos_router` (14) + service + PDF firmado.
-- **Seguridad**: S1/S2 corregidos (rutas PII retiradas, según `HALLAZGOS-SEGURIDAD.md`).
+- **M00 Plataforma**: scheduler, Centinela, backups, disco seguro, docker_client, error_monitor,
+  realtime/bus, debounce, mailer; lifespan real en `main.py` (init_db, seed, bus, scheduler).
+- **M01 Identidad**: auth JWT cookie/bearer, `/auth/me`, multi-tenant, RBAC, personal/roles,
+  login OTP del paciente.
+- **M02 Config**: CONFIG jerárquico, catálogos centro/agenda/admin, uploads, Centinela nivel/contenedores.
+- **M03 Pacientes**: `pacientes_router` (34, sin el bloque PII), geo, anamnesis, multimedia.
+- **M04 Media**: `media_router` (/media autenticado anti-IDOR), drive/orthanc.
+- **M05 Agenda**: agenda_router (11), disponibilidad, `cita_reglas` (registrado al arranque).
+- **M06 Inicio/CRM**: inicio_router (6), crm_router (2), pulso/CRM services.
+- **M07 Clínica**: clinico (14, sin el `/previstos` muerto), consulta (13), cefalometría (9).
+- **M09 Documentos**: documentos_router (8), consentimientos (14).
+- **M10 Presupuestos**: presupuestos_router (15) + authorization_service.
+- **M12 Comunicación/WhatsApp**: comunicacion (42), motion (8), voicebot (5) + servicios completos.
+- **M13 Agentes IA**: agentes_router (18), agentes_db_router (13) + victor/aura/permisos.
+- **M14 IA dental**: dentia (3), radiologia (18), casos_ortodoncia (9), llm (2).
+- **M15 Gestoría**: gestoria_router (86), gestor_ia_router (9) + pipeline fiscal completo.
+- **M16 Informes**: informes_router (13), refactorizado a `api/tablas_ocultas`.
+- **M17 SuperUser**: superuser_router (19), internal_tenant_router (8).
+- **M18 Integraciones**: chat (2), jarvis_operador (2), ollama_relay (2), romexis (5).
+- **M19 Apps móviles**: app_doctor_router (14), app_paciente_router (9).
+- **WebSocket**: `/ws/gestoria/{centro_id}`.
 
-Sigue aquí (infraestructura, sin cambios) y el frontend es **solo esqueleto** (las features por
-módulo están pendientes).
+Verificación: **39 tests en verde (1 skip documentado)**, `deploy-gate.sh` en verde,
+`npx tsc --noEmit` en verde.
 
-Pendiente (siguiente bloque): **M12 Comunicación/WhatsApp** (hub que desbloquea M06, M09
-documentos y M13), luego **M10/M11** (routers de presupuestos/caja) y el resto por
-`MAPA-MODULOS.md`.
+Limpieza de parches (protocolo aplicado en el mismo paso que el port): **238/238 `except`
+amplios trazados con `raiz:` + motivo**, 0 marcadores de parche, 0 código muerto conocido,
+0 IPs duras/esperas mágicas.
 
-Deferred conocidos: `documentos_router` (necesita M12); endpoints Postgres-only (búsqueda de
-pacientes, OTP por teléfono, introspección de admin) no son testeables sobre SQLite, requieren
-PostgreSQL real.
+Pendiente real:
+1. **Frontend por módulo**: solo existe el esqueleto; las 9 features/páginas no están portadas.
+2. **Despliegue**: Oracle sin capacidad ARM (bucle de reintento automático activo); pendiente
+   la IP para el registro `api.ms` y el arranque del servidor.
+3. **M20** (importación de datos) es solo migración SQL/datos, no código de API.
+4. **Limpieza profunda**: la auditoría de los 542 parches del legado es por-archivo y se hace
+   en el mismo paso que cada port (hecho para todo lo portado); queda re-verificarla cuando
+   se toquen esos ficheros de nuevo.
 
 ## Cómo continuar (resume para una sesión nueva)
 
