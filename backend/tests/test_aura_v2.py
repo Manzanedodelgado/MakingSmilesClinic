@@ -275,6 +275,26 @@ def test_rest_pin_exige_superuser(client: TestClient, session: Session, token: s
     assert client.put("/agentes/aura/pin", json={"pin": PIN}, headers=h).status_code == 403
 
 
+# ───────────── Aura solo la ve SuperUser: catálogo, estado y ficha ─────────────
+
+def test_aura_oculta_a_quien_no_es_superuser(client: TestClient, session: Session, token: str):
+    h = {"Authorization": f"Bearer {token}"}
+    ids = [a["id"] for a in client.get("/agentes", headers=h).json()["agentes"]]
+    assert "aura" not in ids and "alex" in ids
+    est = [a["id"] for a in client.get("/agentes/estado/todos", headers=h).json()["agentes"]]
+    assert "aura" not in est
+    assert client.get("/agentes/aura", headers=h).status_code == 403
+    assert client.get("/agentes/alex", headers=h).status_code == 200
+
+
+def test_aura_visible_para_superuser(client: TestClient, session: Session, token: str):
+    _admin(session, _centro(session))
+    h = {"Authorization": f"Bearer {token}"}
+    assert "aura" in [a["id"] for a in client.get("/agentes", headers=h).json()["agentes"]]
+    assert "aura" in [a["id"] for a in client.get("/agentes/estado/todos", headers=h).json()["agentes"]]
+    assert client.get("/agentes/aura", headers=h).json()["id"] == "aura"
+
+
 # ───────────── CATÁLOGO == DESPACHADO, Y EL PROMPT CUENTA LA V2 COMPLETA ─────────────
 
 def test_catalogo_y_despachador_dicen_lo_mismo():

@@ -75,7 +75,17 @@ class AuthService:
             )
         ).all())
 
+
+    def intentos_fallidos_por_ip(self, ip: str, minutos: int) -> dict:
+        """Solo para DETECCIÓN (objetivo `autenticacion` de Centinela) — NUNCA para bloquear."""
+        desde = datetime.utcnow() - timedelta(minutes=minutos)
+        filas = self.session.exec(select(Auditoria.recurso).where(
+            Auditoria.accion == "auth.login", Auditoria.exito == False,  # noqa: E712
+            Auditoria.created_at >= desde, Auditoria.ip == ip)).all()
+        return {"intentos": len(filas), "emails_distintos": len(set(filas))}
+
     # ───────────────────── login ─────────────────────
+
     def login(self, email: str, password: str, *, ip: Optional[str] = None) -> dict[str, Any]:
         from domain.config.settings import settings
         if settings.login_max_intentos and \

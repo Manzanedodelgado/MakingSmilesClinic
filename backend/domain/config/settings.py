@@ -148,6 +148,10 @@ class Settings(BaseSettings):
         obliga a exportar un SECRET_KEY propio de ≥32 chars antes de desplegar."""
         if self.environment.strip().lower() != "development":
             self.cookie_secure = True
+            # Igual que el legado: si nadie fijó PUBLIC_FRONTEND_URL, el default de
+            # desarrollo se sustituye por el dominio público real de producción.
+            if self.public_frontend_url == "http://localhost:3000":
+                self.public_frontend_url = "https://ms.rubiogarciadental.com"
             if not self.public_frontend_url.startswith("https://"):
                 raise ValueError("PUBLIC_FRONTEND_URL debe usar HTTPS fuera de development")
             if self.secret_key == _SECRET_DEFAULT or len(self.secret_key) < 32:

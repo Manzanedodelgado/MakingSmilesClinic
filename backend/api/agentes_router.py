@@ -39,16 +39,23 @@ MAX_AUDIO = 100 * 1024 * 1024
 
 
 # ─────────────────────────── CATÁLOGO ───────────────────────────
+def _es_superuser(session: Session, user: CurrentUser, centro_id: int) -> bool:
+    from application.services.auth_service import AuthService
+    return SUPERUSER in AuthService(session).permisos_de(user.usuario_id, centro_id)
+
+
 @router.get("")
 def catalogo(centro_id: int = Depends(get_current_centro),
-             user: CurrentUser = Depends(require_permission("config.ver"))) -> dict:
+             user: CurrentUser = Depends(require_permission("config.ver")),
+             session: Session = Depends(get_session)) -> dict:
     """Quién es quién: parcela, permisos, capacidades y límites de cada agente.
 
     Lo sirve el catálogo de `domain/config/agentes.py`, que es la fuente única. La pantalla
     NO mantiene su propia copia: si hubiera dos listas, volveríamos al problema de tener
     dos rosters distintos y que nadie supiera cuál manda. Exige config.ver: incluye la ficha
     de Aura (capacidades de administración total), no es algo que vea cualquier empleado."""
-    return {"agentes": [a.to_dict() for a in CATALOGO]}
+    su = _es_superuser(session, user, centro_id)
+    return {"agentes": [a.to_dict() for a in CATALOGO if a.id != "aura" or su]}
 
 
 @router.get("/estado/todos")
@@ -58,7 +65,8 @@ def estado_todos(centro_id: int = Depends(get_current_centro),
     """Estado vivo de cada agente: encendido, operativo (respeta la jerarquía), modelo real
     y capacidades activas. Reconcilia primero para que un agente nuevo del catálogo aparezca."""
     reconciliar(session, centro_id)
-    return {"agentes": estado_agentes(session, centro_id)}
+    su = _es_superuser(session, user, centro_id)
+    return {"agentes": [e for e in estado_agentes(session, centro_id) if e["id"] != "aura" or su]}
 
 
 @router.get("/permisos/catalogo")
@@ -79,7 +87,10 @@ def permisos_catalogo(centro_id: int = Depends(get_current_centro),
 @router.get("/{agente_id}")
 def ficha_agente(agente_id: str,
                  centro_id: int = Depends(get_current_centro),
-                 user: CurrentUser = Depends(require_permission("config.ver"))) -> dict:
+                 user: CurrentUser = Depends(require_permission("config.ver")),
+                 session: Session = Depends(get_session)) -> dict:
+    if agente_id == "aura" and not _es_superuser(session, user, centro_id):
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Aura solo la ve SuperUser")
     a = POR_ID.get(agente_id)
     return a.to_dict() if a else {"error": f"No existe el agente «{agente_id}»"}
 
@@ -355,6 +366,32 @@ def aura_chat(data: AuraChatIn, centro_id: int = Depends(get_current_centro),
     from application.services.aura_agente import AuraAgente
     return AuraAgente(session, centro_id, usuario_id=user.usuario_id).responder(
         data.texto, historial=data.historial)
+
+
+class AuraPinIn(BaseModel):
+    pin: str
+
+
+@router.get("/aura/pin")
+def aura_pin_estado(centro_id: int = Depends(get_current_centro),
+                    user: CurrentUser = Depends(require_permission(SUPERUSER)),
+                    session: Session = Depends(get_session)) -> dict:
+    """¿Hay PIN de escritura fijado? Solo el estado: ni el PIN ni su hash salen jamás."""
+    from application.services import aura_pin
+    return aura_pin.estado_pin(session, centro_id)
+
+
+@router.put("/aura/pin")
+def aura_pin_fijar(data: AuraPinIn, centro_id: int = Depends(get_current_centro),
+                   user: CurrentUser = Depends(require_permission(SUPERUSER)),
+                   session: Session = Depends(get_session)) -> dict:
+    """Fija o cambia el PIN de escritura de Aura (4–8 dígitos). Cambiarlo cierra al instante
+    cualquier sesión desbloqueada. El valor se guarda hasheado y no se audita."""
+    from application.services import aura_pin
+    r = aura_pin.fijar_pin(session, centro_id, user.usuario_id, data.pin)
+    if not r.get("ok"):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, r.get("motivo") or "PIN no válido.")
+    return r
 
 
 @router.get("/aura/centinela")

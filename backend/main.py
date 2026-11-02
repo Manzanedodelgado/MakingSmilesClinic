@@ -1,7 +1,7 @@
 """Punto de entrada de la API FastAPI — MakingSmilesClinic."""
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 import application.services.cita_reglas  # noqa: F401  (registra eventos before_insert/before_update de Cita)
@@ -53,6 +53,8 @@ from api.chat_router import router as chat_router
 from api.uploads_router import router as uploads_router
 from api.media_router import router as media_router
 from api.inicio_router import router as inicio_router
+from fastapi.responses import JSONResponse
+from application.services.caja_service import CajaError, CajaNoEncontrado
 from api.agentes_db_router import router as agentes_db_router
 from api.agentes_router import router as agentes_router
 from api.health_router import router as health_router
@@ -85,10 +87,13 @@ async def lifespan(app: FastAPI):
     await bus.aclose()
 
 
-def _api_docs_options(environment: str) -> dict:
+def _api_docs_options(environment: str, enable_ai_openapi: bool = False) -> dict:
+    """Swagger/Redoc ocultos fuera de development. El schema OpenAPI solo se sirve si
+    `enable_ai_openapi` (el LLM necesita leer el contrato), nunca Swagger/Redoc."""
     if environment.strip().lower() == "development":
         return {"docs_url": "/docs", "redoc_url": "/redoc", "openapi_url": "/openapi.json"}
-    # Producción: Swagger/Redoc siempre ocultos.
+    if enable_ai_openapi:
+        return {"docs_url": None, "redoc_url": None, "openapi_url": "/openapi.json"}
     return {"docs_url": None, "redoc_url": None, "openapi_url": None}
 
 
@@ -96,7 +101,7 @@ app = FastAPI(
     title="MakingSmilesClinic API",
     version="0.1.0",
     lifespan=lifespan,
-    **_api_docs_options(settings.environment),
+    **_api_docs_options(settings.environment, settings.enable_ai_openapi),
 )
 
 app.add_middleware(
@@ -152,6 +157,17 @@ app.include_router(agentes_db_router)
 app.include_router(agentes_router)
 app.include_router(health_router)
 
+
+
+
+@app.exception_handler(CajaError)
+async def _caja_error_handler(request: Request, exc: CajaError):
+    return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+@app.exception_handler(CajaNoEncontrado)
+async def _caja_no_encontrado_handler(request: Request, exc: CajaNoEncontrado):
+    return JSONResponse(status_code=404, content={"detail": str(exc)})
 
 @app.get("/")
 def root() -> dict:

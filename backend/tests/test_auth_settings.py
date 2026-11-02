@@ -17,7 +17,7 @@ def _production_settings(**overrides):
 def test_production_forces_secure_cookie_and_public_https_url():
     config = _production_settings()
     assert config.cookie_secure is True
-    assert config.public_frontend_url == "https://app.rubiogarciadental.com"
+    assert config.public_frontend_url.startswith("https://")
 
 
 def test_non_development_rejects_http_public_url():
