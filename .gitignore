@@ -20,3 +20,6 @@ out/
 
 # npm cache local (volumen de red)
 .npm-cache/
+
+# macOS AppleDouble (volumen de red)
+._*
