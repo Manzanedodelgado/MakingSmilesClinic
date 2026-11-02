@@ -68,7 +68,7 @@ class EventBus:
             self._pubsub_task = asyncio.create_task(self._escuchar_redis(), name="event-bus-redis")
             self._modo_redis = True
             logger.info("Bus de eventos: modo REDIS pub/sub (%s).", url)
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # raiz: bus de eventos: fallo de conexion no tumba la app; degrada a memoria
             logger.warning(
                 "Bus de eventos: REDIS_URL definido pero Redis no responde (%s). "
                 "Fallback a modo MEMORIA (1 worker).", exc,
@@ -104,7 +104,7 @@ class EventBus:
                 self._repartir_local(centro_id, evento)
         except asyncio.CancelledError:
             raise
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:  # raiz: bus de eventos: fallo de conexion no tumba la app; degrada a memoria
             logger.warning("Bus Redis: escuchador caido (%s). Tiempo real degradado a memoria.", exc)
         finally:
             await _cerrar_quieto(pubsub.aclose(), "pubsub")

@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     jarvis_operador_url: str = ""
     jarvis_operador_key: str = ""
 
+    # BBDD de PLATAFORMA (SuperUser): registro de centros, separada de la operativa de
+    # cada centro. Vacío = misma instancia Postgres, BD distinta (la deriva compose).
+    platform_database_url: str = ""
+    # Clave compartida que exige el router interno (/internal/tenant/...) — único punto
+    # por el que SuperUser toca datos operativos de un centro, nunca por acceso directo a BD.
+    internal_api_key: str = "dev-internal-key-change-me"
+    # Base URL del propio backend (self-call): SuperUser llama aquí, nunca hace queries directas.
+    internal_api_base_url: str = "http://localhost:8000"
+
     @model_validator(mode="after")
     def _exigir_secreto_en_produccion(self):
         """Fuera de development, el JWT no puede firmarse con el secreto por defecto."""
