@@ -4,17 +4,20 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+import application.services.cita_reglas  # noqa: F401  (registra eventos before_insert/before_update de Cita)
 from api.geo_router import router as geo_router
 from api.auth_router import router as auth_router
 from api.paciente_auth_router import router as paciente_auth_router
 from api.config_router import router as config_router
 from api.configuracion_centro_router import router as configuracion_centro_router
 from api.configuracion_agenda_router import router as configuracion_agenda_router
+from api.agenda_router import router as agenda_router
 from api.configuracion_staff_router import router as configuracion_staff_router
 from api.configuracion_roles_router import router as configuracion_roles_router
 from api.configuracion_admin_router import router as configuracion_admin_router
 from api.pacientes_router import router as pacientes_router
 from api.uploads_router import router as uploads_router
+from api.media_router import router as media_router
 from api.health_router import router as health_router
 from domain.config.settings import settings
 
@@ -65,11 +68,13 @@ app.include_router(paciente_auth_router)
 app.include_router(config_router)
 app.include_router(configuracion_centro_router)
 app.include_router(configuracion_agenda_router)
+app.include_router(agenda_router)
 app.include_router(configuracion_staff_router)
 app.include_router(configuracion_roles_router)
 app.include_router(configuracion_admin_router)
 app.include_router(pacientes_router)
 app.include_router(uploads_router)
+app.include_router(media_router)
 app.include_router(health_router)
 
 
