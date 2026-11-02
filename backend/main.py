@@ -16,6 +16,9 @@ from api.configuracion_staff_router import router as configuracion_staff_router
 from api.configuracion_roles_router import router as configuracion_roles_router
 from api.configuracion_admin_router import router as configuracion_admin_router
 from api.pacientes_router import router as pacientes_router
+from api.clinico_router import router as clinico_router
+from api.consulta_router import router as consulta_router
+from api.cefalometria_router import router as cefalometria_router
 from api.uploads_router import router as uploads_router
 from api.media_router import router as media_router
 from api.health_router import router as health_router
@@ -73,6 +76,9 @@ app.include_router(configuracion_staff_router)
 app.include_router(configuracion_roles_router)
 app.include_router(configuracion_admin_router)
 app.include_router(pacientes_router)
+app.include_router(clinico_router)
+app.include_router(consulta_router)
+app.include_router(cefalometria_router)
 app.include_router(uploads_router)
 app.include_router(media_router)
 app.include_router(health_router)
