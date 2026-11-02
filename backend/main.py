@@ -44,8 +44,12 @@ from api.consentimientos_router import router as consentimientos_router
 from api.casos_ortodoncia_router import router as casos_ortodoncia_router
 from api.radiologia_router import router as radiologia_router
 from api.dentia_router import router as dentia_router
+from api.romexis_router import router as romexis_router
 from api.cefalometria_router import router as cefalometria_router
 from api.llm_router import router as llm_router
+from api.ollama_relay_router import router as ollama_relay_router
+from api.jarvis_operador_router import router as jarvis_operador_router
+from api.chat_router import router as chat_router
 from api.uploads_router import router as uploads_router
 from api.media_router import router as media_router
 from api.inicio_router import router as inicio_router
@@ -135,8 +139,12 @@ app.include_router(consentimientos_router)
 app.include_router(casos_ortodoncia_router)
 app.include_router(radiologia_router)
 app.include_router(dentia_router)
+app.include_router(romexis_router)
 app.include_router(cefalometria_router)
 app.include_router(llm_router)
+app.include_router(ollama_relay_router)
+app.include_router(jarvis_operador_router)
+app.include_router(chat_router)
 app.include_router(uploads_router)
 app.include_router(media_router)
 app.include_router(inicio_router)

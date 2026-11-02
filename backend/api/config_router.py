@@ -53,3 +53,29 @@ def set_config(
     )
     return {"id": row.id, "clave": row.clave, "valor": row.valor,
             "centro_id": row.centro_id, "sistema": row.sistema}
+
+
+@router.get("/centinela/nivel")
+def centinela_nivel(
+    centro_id: int = Depends(get_current_centro),
+    _user: CurrentUser = Depends(get_current_user),
+    session: Session = Depends(get_session),
+) -> dict:
+    """Lectura barata del último nivel conocido de Centinela (indicador 'Victor')."""
+    from sqlmodel import select
+    from domain.models.auditoria import Auditoria
+    ultimo = session.exec(select(Auditoria).where(
+        Auditoria.accion == "centinela.tick", Auditoria.centro_id == centro_id
+    ).order_by(Auditoria.created_at.desc())).first()
+    if not ultimo:
+        return {"nivel": None, "comprobado": None}
+    return {"nivel": (ultimo.detalle or {}).get("nivel"), "comprobado": ultimo.created_at.isoformat(timespec="seconds")}
+
+
+@router.get("/centinela/contenedores")
+def centinela_contenedores(
+    _user: CurrentUser = Depends(require_permission("config.editar")),
+) -> dict:
+    """Catálogo de contenedores que Victor puede reiniciar — techo duro de código."""
+    from infrastructure.docker_client import CONTENEDORES_PERMITIDOS
+    return {"contenedores": sorted(CONTENEDORES_PERMITIDOS)}
