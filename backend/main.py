@@ -16,6 +16,7 @@ from api.configuracion_staff_router import router as configuracion_staff_router
 from api.configuracion_roles_router import router as configuracion_roles_router
 from api.configuracion_admin_router import router as configuracion_admin_router
 from api.pacientes_router import router as pacientes_router
+from api.presupuestos_router import router as presupuestos_router
 from api.clinico_router import router as clinico_router
 from api.consulta_router import router as consulta_router
 from api.consentimientos_router import router as consentimientos_router
@@ -77,6 +78,7 @@ app.include_router(configuracion_staff_router)
 app.include_router(configuracion_roles_router)
 app.include_router(configuracion_admin_router)
 app.include_router(pacientes_router)
+app.include_router(presupuestos_router)
 app.include_router(clinico_router)
 app.include_router(consulta_router)
 app.include_router(consentimientos_router)
