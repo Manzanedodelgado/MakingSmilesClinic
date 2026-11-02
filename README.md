@@ -23,32 +23,38 @@ Reglas de integración (ver `docs/decisiones/ADR-001` y `docs/rebuild/INFRA.md`)
 
 ## Estado actual (2026-11-02)
 
-`main` ya tiene el **primer bloque de código** reconstruido, verificado y subido a GitHub:
+`main` tiene reconstruidos, verificados y subidos a GitHub: **esqueleto + M01, M02, M03, M04,
+M05, M07 y M09 (consentimientos)**. El backend expone **146 rutas / 175 operaciones** (de las
+432/498 del contrato), con **38 tests en verde (1 skip)**, `deploy-gate.sh` en verde y
+`npx tsc --noEmit` en verde.
 
-- **Backend (`backend/`)** — FastAPI + Clean Architecture. Arranca con `main.py`, ruta
-  `GET /health`, **M01 Identidad** (login bearer + cookie httpOnly, `/auth/me`,
-  `X-Centro-Id` multi-tenant, `require_permission`, reset/forgot, RBAC) y **M02 Config**
-  (CONFIG jerárquico como fuente de verdad, permiso `config.editar`). 12 tests en verde.
-- **Frontend (`frontend/`)** — Next 15 feature-first: layout raíz, página `/health`, shell
-  `(app)`, rewrite `/api/*` (en `vercel.json`), `npx tsc --noEmit` en verde.
-- `scripts/deploy-gate.sh main` en verde (el gate exige `.env` con 13 variables; en local se
-  usan placeholders, los secretos reales los aporta el propietario).
+Completado (backend):
+- **M01 Identidad**: login bearer/cookie httpOnly, `/auth/me`, `X-Centro-Id`,
+  `require_permission`, reset/forgot, RBAC, alta de personal (`configuracion_staff_router`),
+  roles (`configuracion_roles_router`), login OTP del paciente (`paciente_auth`).
+- **M02 Config**: CONFIG jerárquico, catálogos (`configuracion_centro_router`,
+  `configuracion_agenda_router`), admin (`configuracion_admin_router`), uploads.
+- **M03 Pacientes**: `pacientes_router` (34 rutas tras retirar el bloque PII S1/S2),
+  `geo_router`, `paciente_helper`, anamnesis, multimedia.
+- **M04 Media**: `media_router` (/media autenticado anti-IDOR), `multimedia_service`,
+  `drive_client`, `orthanc_client`.
+- **M05 Agenda**: `agenda_router` (11), disponibilidad, `cita_reglas` (registrado al arranque:
+  se corrige la fragilidad del legado, que nunca lo importaba).
+- **M07 Clínica**: `clinico_router` (15), `consulta_router` (13), `cefalometria_router` (9) +
+  servicios (consulta, cefalometría, recetas PDF, presupuestos, caja, LLM).
+- **M09**: `consentimientos_router` (14) + service + PDF firmado.
+- **Seguridad**: S1/S2 corregidos (rutas PII retiradas, según `HALLAZGOS-SEGURIDAD.md`).
 
-Sigue aquí (sin cambios):
-- `deploy/oracle/` — compose (Caddy, FastAPI, Postgres, Redis, Evolution), Caddyfile,
-  bootstrap, backups (cifrado `age`, verificación, offsite), restore, deploy-staging,
-  `validate-env.sh`, `check-evolution.sh`.
-- `vercel.json` + `frontend/vercel.json` (idénticos; 5 placeholders `api.staging.example.com`).
-- `.github/workflows/` — gate + deploy Oracle (build arm64→GHCR, SSH, rollback por slots).
-- `scripts/` — `deploy-gate.sh`, `check-silent-except.py`, `check-un-solo-dueno.py`,
-  `check.sh`, `deploy-lock.sh`, `paridad_api.py`. **Nada de scripts legacy.**
-- `docs/rebuild/` — contrato del legado y plan.
-- `docs/decisiones/` — ADR-000 y ADR-001.
+Sigue aquí (infraestructura, sin cambios) y el frontend es **solo esqueleto** (las features por
+módulo están pendientes).
 
-Pendiente (siguiente bloque): cerrar M01 (alta de personal/roles: `configuracion_staff_router`,
-`configuracion_roles_router`, `paciente_auth_router` — login OTP de la app del paciente) y M02
-(catálogos de centro/agenda/admin, apariencia/upload), y después **M03 Pacientes** según
+Pendiente (siguiente bloque): **M12 Comunicación/WhatsApp** (hub que desbloquea M06, M09
+documentos y M13), luego **M10/M11** (routers de presupuestos/caja) y el resto por
 `MAPA-MODULOS.md`.
+
+Deferred conocidos: `documentos_router` (necesita M12); endpoints Postgres-only (búsqueda de
+pacientes, OTP por teléfono, introspección de admin) no son testeables sobre SQLite, requieren
+PostgreSQL real.
 
 ## Cómo continuar (resume para una sesión nueva)
 
