@@ -21,21 +21,27 @@ async def health() -> dict:
     except Exception:  # raiz: sin BD -> estado 'error' en /health; el endpoint sigue respondiendo al balanceador
         db_status = "error"
     
-    # Check LLM provider
-    llm_provider = get_llm_provider()
-    llm_health = await llm_provider.health_check()
-    
+    # Check LLM provider (opcional: su caída NO debe tumbar /health)
+    llm_status, llm_provider_name, llm_model, llm_details = "error", "unknown", "unknown", {}
+    try:
+        llm_provider = get_llm_provider()
+        llm_health = await llm_provider.health_check()
+        llm_status = llm_health.get("status", "error")
+        llm_provider_name = llm_health.get("provider", "unknown")
+        llm_model = llm_health.get("model", "unknown")
+        llm_details = llm_health.get("details", {})
+    except Exception:  # raiz: el LLM es opcional; /health debe responder aunque no este configurado/caido
+        pass
+
     api_status = "ok"
-    
+
     return {
         "api": api_status,
         "database": db_status,
-        "llm": llm_health.get("status", "error"),
-        "provider": llm_health.get("provider", "unknown"),
-        "model": llm_health.get("model", "unknown"),
-        "details": {
-            "llm": llm_health.get("details", {})
-        }
+        "llm": llm_status,
+        "provider": llm_provider_name,
+        "model": llm_model,
+        "details": {"llm": llm_details},
     }
 
 
