@@ -12,6 +12,7 @@ export type Conv = {
   ultimoMensaje: string | null; ultimoMensajeAt: string | null;
   ultimaDireccion: "entrante" | "saliente" | null; fijada: boolean; urgente: boolean;
   iaPausada?: boolean; iaPausadaHasta?: string | null;
+  archivada?: boolean;
 };
 export type Msg = {
   id: number; direccion: "entrante" | "saliente" | "nota"; cuerpo: string; estado: string;
