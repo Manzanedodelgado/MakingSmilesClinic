@@ -60,12 +60,12 @@ from api.agentes_router import router as agentes_router
 from api.health_router import router as health_router
 from domain.config.settings import settings
 
-# CORS. En producción el navegador NUNCA llama al backend directamente (va por el
-# rewrite /api/* de Next en Vercel), así que solo se permite el dominio público.
+# CORS. El frontend en Vercel (ms.rubiogarciadental.com) llama al backend directamente.
 if settings.environment.strip().lower() == "development":
     ALLOWED_ORIGINS = [
         *[f"http://localhost:{port}" for port in range(3000, 3007)],
         *[f"http://127.0.0.1:{port}" for port in range(3000, 3007)],
+        "https://ms.rubiogarciadental.com",
     ]
 else:
     ALLOWED_ORIGINS = [settings.public_frontend_url, "https://ms.rubiogarciadental.com"]
