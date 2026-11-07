@@ -68,7 +68,7 @@ if settings.environment.strip().lower() == "development":
         *[f"http://127.0.0.1:{port}" for port in range(3000, 3007)],
     ]
 else:
-    ALLOWED_ORIGINS = [settings.public_frontend_url]
+    ALLOWED_ORIGINS = [settings.public_frontend_url, "https://ms.rubiogarciadental.com"]
 
 
 @asynccontextmanager
